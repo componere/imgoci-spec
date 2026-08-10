@@ -10,6 +10,8 @@ This section records work completed before automated releases were enabled.
 ### Added
 
 - Initial repository structure based on the imgoci release format v1 draft.
+- Defined the Incus target and coordinated metadata-plus-QCOW2 virtual-machine
+  representation.
 
 ### Documentation
 

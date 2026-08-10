@@ -262,6 +262,7 @@ release-index shape. A new public value must satisfy section 5.3.
 | `hetzner` | Hetzner Cloud. |
 | `hyperv` | Microsoft Hyper-V. |
 | `ibmcloud` | IBM Cloud. |
+| `incus` | Incus. |
 | `kubevirt` | KubeVirt. |
 | `metal` | Bare metal. |
 | `nutanix` | Nutanix AHV. |
@@ -288,8 +289,18 @@ architecture, and representation that describes the deliverable.
 | `raw` | `disk` | One raw disk image for a disk with 512-byte logical sectors. |
 | `raw-4kn` | `disk` | One raw disk image for a 4K-native disk with 4096-byte logical sectors. |
 | `qcow2` | `disk` | One standalone QCOW2 version 2 or 3 disk image with no backing file or external data file. |
+| `incus-vm` | `disk`, `metadata` | One split Incus virtual-machine image. `disk` is a standalone QCOW2 version 2 or 3 disk image with no backing file or external data file. `metadata` is an XZ-compressed Incus metadata tar archive. |
 | `iso` | `disk` | One optical-disc image that conforms to ECMA-119. |
 | `pxe` | `kernel`, `initramfs`, `rootfs` | One coordinated network-boot set. |
+
+An `incus-vm` deliverable must use `target=incus`. Its metadata tar archive and
+contents must conform to the Incus Image Format. The archive must contain
+`metadata.yaml` at its root and may contain a `templates/` directory. It must
+not contain the root disk; the `disk` role carries that file.
+
+The XZ stream is part of the decoded `metadata` content. An entry that stores
+the XZ stream directly uses `compression=none`. If an entry applies an imgoci
+compression, decoding it must produce the exact XZ stream.
 
 A deliverable using a standard representation must contain every required role
 listed for that representation. It may contain other roles. Those roles do not
@@ -327,6 +338,7 @@ bytes.
 | `disk` | A disk or optical-media image. |
 | `kernel` | A boot kernel. |
 | `initramfs` | An initial RAM filesystem. |
+| `metadata` | Metadata and templates required to import or run the other files in a deliverable. |
 | `rootfs` | A root filesystem used with other boot files. |
 
 Adding a role does not require a new release media type.
@@ -360,8 +372,8 @@ The release index is invalid if any of these conditions is true:
 1. The root object does not satisfy section 5.1.
 2. A descriptor does not satisfy section 5.2.
 3. A required value does not satisfy section 5.3.
-4. A deliverable using a standard representation is missing a required role
-   listed in section 5.4.
+4. A deliverable using a standard representation is missing a required role or
+   uses a target forbidden by that representation in section 5.4.
 5. Two entries have the same
    `(architecture, target, representation, role, compression)` tuple.
 6. Transport alternatives for one file have different content digests,
@@ -616,3 +628,4 @@ alternatives.
 - [RFC 8785: JSON Canonicalization Scheme](https://www.rfc-editor.org/rfc/rfc8785.html)
 - [QEMU v11.0.3 QCOW2 Image File Format](https://gitlab.com/qemu-project/qemu/-/blob/v11.0.3/docs/interop/qcow2.rst)
 - [ECMA-119, 6th edition](https://ecma-international.org/wp-content/uploads/ECMA-119_6th_edition_december_2025.pdf)
+- [Incus 7.0 Image Format](https://github.com/lxc/incus/blob/v7.0.0/doc/reference/image_format.md)
