@@ -31,3 +31,9 @@ Implementation commits: `24b9c98`, `162fef7`, and `405115e` on `feat/plain-langu
 Validation: `git diff --check`; workflow-pinned repository metadata, schema, conformance-case, corpus, and Markdown-link checks; and the hosted `Validate/validate` pull-request check all passed.
 Published draft PR [#1](https://github.com/componere/imgoci-spec/pull/1), `docs(spec): clarify draft language`.
 Next: Present the draft PR for user review. The journal session remains open.
+
+## 2026-08-10 12:28 — Linguistic revision merged
+After user approval, marked PR #1 ready and verified that its reviewed head remained `405115e`, its merge state was clean, and its validation check had passed.
+Squash-merged PR #1 into `master` as `e01e41e` without bypassing protections. The post-merge `Validate` run `31424218650` passed.
+GitHub deleted the remote feature branch. Worktrunk then removed the clean, integrated implementation worktree and local branch, and the default worktree was fast-forwarded to the merged commit.
+Next: Await further work. The journal session remains open.
