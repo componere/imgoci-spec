@@ -86,8 +86,8 @@ A release index must contain only imgoci file entries. It must not mix file
 entries with container images or compatibility descriptors.
 
 Every file entry must point to a manifest that conforms to BigOCI File Format
-v1. That format represents a small file with one part and a large file with
-several parts. imgoci does not define another leaf format.
+v1. BigOCI uses one part for a small file and several parts for a large file.
+imgoci defines no other leaf format.
 
 The release index, file manifests, and blobs must be in the same OCI
 repository.
@@ -95,7 +95,7 @@ repository.
 A file-entry descriptor must not contain an OCI `platform` object.
 `io.imgoci.architecture` is the only architecture value used by this format.
 This rule prevents two sources of architecture metadata. It does not make a
-claim about how a general OCI image client will handle the index.
+claim about how a general OCI image client handles the index.
 
 ## 4. Media types
 
@@ -144,8 +144,8 @@ characters. It must not contain whitespace or control characters. The version
 is metadata. This specification does not define how it maps to a tag or how
 two versions are ordered.
 
-The digest of the canonical release index identifies the encoded release.
-Name and version are labels carried by that object.
+The canonical release-index digest identifies the encoded release. The name
+and version label that object.
 
 ### 5.2 File-entry descriptor
 
@@ -183,8 +183,8 @@ Other annotation keys are allowed on the release index and file-entry
 descriptors. Keys beginning with `io.imgoci.` are reserved for this
 specification. An imgoci v1 object must not use an undefined key in that
 namespace. Other annotations do not affect selection, but they affect the
-release-index digest. A producer should not add volatile annotations when it
-needs a reproducible digest.
+release-index digest. A producer that needs a reproducible digest should not
+add annotations whose values change.
 
 ### 5.3 Value syntax
 
@@ -198,12 +198,11 @@ A basic token contains 1 to 128 ASCII bytes and must match:
 basic tokens.
 
 An architecture value must contain either one basic token or two basic tokens
-separated by `/`. A producer must use the OCI Image Index
-`platform.architecture` spelling for a public first token and the OCI
-`platform.variant` spelling for a public second token. A producer-defined
-architecture must use a private `x-` token. Examples include `amd64`, `arm64`,
-and `arm/v7`. Consumers validate architecture values by syntax, not by a fixed
-list.
+separated by `/`. For a public first token, a producer must use the OCI Image
+Index `platform.architecture` spelling. For a public second token, it must use
+the OCI `platform.variant` spelling. A producer-defined architecture must use
+a private `x-` token. Examples include `amd64`, `arm64`, and `arm/v7`.
+Consumers validate architecture values by syntax, not by a fixed list.
 
 `io.imgoci.content.digest` must be `sha256:` followed by 64 lowercase
 hexadecimal digits.
@@ -213,23 +212,23 @@ hexadecimal digits.
 9223372036854775807.
 
 Public selector values adopted by imgoci are append-only. Their meanings must
-not change. Public values are defined only by this specification or a later
+not change. Public values are defined only in this specification or a later
 imgoci addendum. A producer must use a public value when it has a matching
-meaning. It must not mint a private synonym for that value. Other
+meaning. It must not define a private synonym for that value. Other
 producer-defined selector values must use `x-<owner>-<name>`. This naming rule
 does not apply to `io.imgoci.name` or the release version.
 
 Producer conformance uses the public-value registry. Consumer validation does
 not use it as an allowlist. A consumer must accept every syntactically valid
-value, preserve and return unknown values during discovery, and compare values
-exactly. An operation that must interpret an unknown value may report that it
-is unsupported.
+value and compare values exactly. During discovery, it must preserve and return
+unknown values. An operation that must interpret an unknown value may report
+the value as unsupported.
 
 There are no wildcard values in imgoci v1. Omitting a query field is the only
 way to make that field broad. A producer must not assign special wildcard
 meaning to `any`, `*`, or another token.
 
-To classify one file for several architectures or targets, a producer emits
+To classify one file for more than one architecture or target, a producer emits
 one descriptor for each value. Those descriptors may share one BigOCI digest.
 
 A title must match:
@@ -249,9 +248,9 @@ compatible revision or addendum may add a public value without changing the
 release-index shape. A new public value must follow section 5.3.
 
 The initial target names come from platform identifiers used by Fedora CoreOS.
-The table defines them as imgoci values. Fedora CoreOS is not a normative or
-runtime dependency. Later changes to Fedora CoreOS do not change these
-definitions.
+This table defines those identifiers as imgoci values. Fedora CoreOS is not a
+normative or runtime dependency. Later changes to Fedora CoreOS do not change
+these definitions.
 
 #### Targets
 
@@ -281,12 +280,11 @@ definitions.
 | `vultr` | Vultr. |
 
 These values name environment families. They do not promise compatibility
-with every version or configuration of the named environment. A producer must
-use a more specific value when a known difference affects whether the
-deliverable can be booted or imported and is not expressed by architecture or
-representation. The registry does not restrict target, architecture, and
-representation combinations. A producer may use any combination that
-describes the deliverable.
+with every version or configuration of the named environment. If a known
+difference affects boot or import and architecture or representation does not
+express it, a producer must use a more specific target. The registry does not
+restrict target, architecture, and representation combinations. A producer may
+use any combination that describes the deliverable.
 
 #### Representations
 
@@ -309,7 +307,7 @@ Representation and compression are separate. A compound source label such as
 
 A wrapper that remains part of the selected deliverable form is part of the
 representation, not its compression. When the stored file has no additional
-outer transform, the entry uses `compression=none`. It may use private
+outer transform, the entry uses `compression=none`. The entry may use private
 representation and role values until an imgoci addendum defines public values
 for that form.
 
@@ -349,12 +347,12 @@ hypervisor, cloud, firmware, or disk format.
 
 Target identifies the intended boot or import environment. A target value must
 distinguish known environment differences that affect whether a deliverable
-can be used and are not properties of architecture or representation. OS
+can be used and that architecture or representation does not express. OS
 product identity does not belong in a target value.
 
 Representation identifies the form requested by a consumer. It may describe
 one file, such as `qcow2`, or a coordinated file set, such as `pxe`.
-Representation is broader than a byte-container format.
+A representation may describe more than a byte-container format.
 
 Role identifies one file inside a deliverable. Two distinct files in one
 deliverable must use distinct roles.
@@ -402,7 +400,7 @@ matches. It does not choose one.
 The caller supplies an OCI reference.
 
 Before fetching the release, a consumer must validate the query. Every query
-value must follow section 5.3. A role list, when present, must be non-empty and
+value must follow section 5.3. If present, a role list must be non-empty and
 must not contain duplicates. A resolve query's accepted-compression list must
 be non-empty and must not contain duplicates.
 
@@ -417,8 +415,8 @@ A consumer must:
 6. validate the complete release index; and
 7. use digest references for all later fetches.
 
-Catalog selection needs one release-index retrieval after registry
-authentication. This is not a promise of one network round trip.
+Selection requires one release-index retrieval after registry authentication.
+It may require more than one network round trip.
 
 ### 7.2 List deliverables
 
@@ -483,8 +481,8 @@ A consumer must fetch each selected BigOCI manifest by digest.
 
 For each selected file, the consumer must:
 
-1. compare the fetched manifest bytes and byte length with the descriptor
-   digest and size;
+1. compare the fetched manifest's SHA-256 digest and byte length with the
+   descriptor digest and size;
 2. validate the manifest against BigOCI File Format v1;
 3. fetch the parts in any order and verify each part digest and size;
 4. assemble the parts in manifest order;
@@ -529,10 +527,9 @@ A consumer must validate all ten rules in section 6 and reject an index whose
 descriptor order or JSON encoding is not canonical.
 
 The same release-index fields, descriptors, and annotations produce the same
-index bytes and digest. This statement does not mean that equal decoded content
-always produces the same OCI graph. BigOCI part size, BigOCI title, compressed
-bytes, descriptor metadata, and additional annotations are inputs to the
-resulting digests.
+index bytes and digest. Equal decoded content can still produce different OCI
+graphs. The resulting digests also depend on BigOCI part size, BigOCI title,
+compressed bytes, descriptor metadata, and additional annotations.
 
 ## 10. References and tags
 
