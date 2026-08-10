@@ -1,0 +1,252 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "imgoci conformance case",
+  "description": "Informative metadata for one language-neutral imgoci conformance case.",
+  "oneOf": [
+    {
+      "$ref": "#/$defs/validationCase"
+    },
+    {
+      "$ref": "#/$defs/resolveCase"
+    }
+  ],
+  "$defs": {
+    "commonProperties": {
+      "type": "object",
+      "properties": {
+        "$schema": {
+          "const": "../../../case.schema.json"
+        },
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+        },
+        "summary": {
+          "type": "string",
+          "minLength": 1
+        },
+        "appliesTo": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "producer",
+              "consumer"
+            ]
+          }
+        },
+        "references": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/reference"
+          }
+        }
+      }
+    },
+    "reference": {
+      "type": "object",
+      "required": [
+        "section"
+      ],
+      "properties": {
+        "section": {
+          "type": "string",
+          "pattern": "^[0-9]+(?:\\.[0-9]+)*$"
+        },
+        "item": {
+          "type": "integer",
+          "minimum": 1
+        }
+      },
+      "additionalProperties": false
+    },
+    "query": {
+      "type": "object",
+      "required": [
+        "architecture",
+        "target",
+        "representation",
+        "roles",
+        "acceptedCompressions"
+      ],
+      "properties": {
+        "architecture": {
+          "type": "string",
+          "minLength": 1
+        },
+        "target": {
+          "type": "string",
+          "minLength": 1
+        },
+        "representation": {
+          "type": "string",
+          "minLength": 1
+        },
+        "roles": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "acceptedCompressions": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "validationCase": {
+      "type": "object",
+      "required": [
+        "$schema",
+        "id",
+        "summary",
+        "appliesTo",
+        "operation",
+        "input",
+        "references",
+        "expected"
+      ],
+      "properties": {
+        "$schema": {
+          "$ref": "#/$defs/commonProperties/properties/$schema"
+        },
+        "id": {
+          "$ref": "#/$defs/commonProperties/properties/id"
+        },
+        "summary": {
+          "$ref": "#/$defs/commonProperties/properties/summary"
+        },
+        "appliesTo": {
+          "$ref": "#/$defs/commonProperties/properties/appliesTo"
+        },
+        "operation": {
+          "const": "validate-release-index"
+        },
+        "input": {
+          "type": "object",
+          "required": [
+            "index"
+          ],
+          "properties": {
+            "index": {
+              "const": "index.json"
+            }
+          },
+          "additionalProperties": false
+        },
+        "references": {
+          "$ref": "#/$defs/commonProperties/properties/references"
+        },
+        "expected": {
+          "type": "object",
+          "required": [
+            "outcome",
+            "schemaValid",
+            "canonicalJson"
+          ],
+          "properties": {
+            "outcome": {
+              "enum": [
+                "valid",
+                "invalid"
+              ]
+            },
+            "schemaValid": {
+              "type": "boolean"
+            },
+            "canonicalJson": {
+              "type": "boolean"
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "resolveCase": {
+      "type": "object",
+      "required": [
+        "$schema",
+        "id",
+        "summary",
+        "appliesTo",
+        "operation",
+        "input",
+        "references",
+        "expected"
+      ],
+      "properties": {
+        "$schema": {
+          "$ref": "#/$defs/commonProperties/properties/$schema"
+        },
+        "id": {
+          "$ref": "#/$defs/commonProperties/properties/id"
+        },
+        "summary": {
+          "$ref": "#/$defs/commonProperties/properties/summary"
+        },
+        "appliesTo": {
+          "$ref": "#/$defs/commonProperties/properties/appliesTo"
+        },
+        "operation": {
+          "const": "resolve-deliverable"
+        },
+        "input": {
+          "type": "object",
+          "required": [
+            "index",
+            "query"
+          ],
+          "properties": {
+            "index": {
+              "const": "index.json"
+            },
+            "query": {
+              "$ref": "#/$defs/query"
+            }
+          },
+          "additionalProperties": false
+        },
+        "references": {
+          "$ref": "#/$defs/commonProperties/properties/references"
+        },
+        "expected": {
+          "type": "object",
+          "required": [
+            "outcome",
+            "schemaValid",
+            "canonicalJson",
+            "result"
+          ],
+          "properties": {
+            "outcome": {
+              "const": "resolved"
+            },
+            "schemaValid": {
+              "const": true
+            },
+            "canonicalJson": {
+              "const": true
+            },
+            "result": {
+              "const": "expected.json"
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

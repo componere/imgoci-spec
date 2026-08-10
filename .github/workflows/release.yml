@@ -1,0 +1,125 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  validate:
+    uses: ./.github/workflows/validate.yml
+    permissions:
+      contents: read
+
+  package:
+    needs: validate
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      attestations: write
+      id-token: write
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Build deterministic publication archive
+        id: archive
+        run: |
+          if [[ "${{ github.event_name }}" == "push" ]]; then
+            archive_version="${GITHUB_REF_NAME#v}"
+          else
+            archive_version="rehearsal-${GITHUB_RUN_NUMBER}-${GITHUB_SHA:0:7}"
+          fi
+
+          if [[ ! "${archive_version}" =~ ^[0-9A-Za-z][0-9A-Za-z.-]*$ ]]; then
+            echo "unsafe archive version: ${archive_version}" >&2
+            exit 1
+          fi
+
+          archive_root="imgoci-spec-${archive_version}"
+          archive_name="${archive_root}.tar.gz"
+          mkdir -p "dist/stage/${archive_root}"
+          cp README.md spec.md LICENSE-APACHE LICENSE-MIT "dist/stage/${archive_root}/"
+          cp -R schema conformance "dist/stage/${archive_root}/"
+
+          tar \
+            --sort=name \
+            --mtime=@0 \
+            --owner=0 \
+            --group=0 \
+            --numeric-owner \
+            -C dist/stage \
+            -cf - \
+            "${archive_root}" |
+            gzip -n > "dist/${archive_name}"
+
+          echo "name=${archive_name}" >> "${GITHUB_OUTPUT}"
+
+      - name: Attest publication archive
+        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
+        with:
+          subject-path: dist/${{ steps.archive.outputs.name }}
+
+      - name: Preserve rehearsal or release artifact
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: spec-publication
+          path: dist/${{ steps.archive.outputs.name }}
+          if-no-files-found: error
+          retention-days: 7
+
+  publish:
+    if: github.event_name == 'push'
+    needs: package
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - name: Download publication archive
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: spec-publication
+          path: dist
+
+      - name: Create and publish GitHub release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          release_tag="${GITHUB_REF_NAME}"
+
+          if release_state="$(gh release view "${release_tag}" --repo "${GITHUB_REPOSITORY}" --json isDraft --jq .isDraft 2>/dev/null)"; then
+            if [[ "${release_state}" != "true" ]]; then
+              echo "release ${release_tag} is already published" >&2
+              exit 1
+            fi
+          else
+            release_arguments=(
+              --repo "${GITHUB_REPOSITORY}"
+              --verify-tag
+              --draft
+              --title "${release_tag}"
+              --generate-notes
+            )
+            if [[ "${release_tag}" == *-* ]]; then
+              release_arguments+=(--prerelease)
+            fi
+            gh release create "${release_tag}" "${release_arguments[@]}"
+          fi
+
+          gh release upload "${release_tag}" dist/* \
+            --repo "${GITHUB_REPOSITORY}" \
+            --clobber
+          gh release edit "${release_tag}" \
+            --repo "${GITHUB_REPOSITORY}" \
+            --draft=false

@@ -1,0 +1,42 @@
+name: Specification change
+description: Propose new or changed normative behavior.
+title: "proposal: "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this form for proposed changes to the specification.
+        Report security vulnerabilities privately as described in SECURITY.md.
+  - type: textarea
+    id: use-case
+    attributes:
+      label: Use case
+      description: Describe the concrete producer or consumer need.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed change
+      description: Describe the smallest specification change that addresses the use case.
+    validations:
+      required: true
+  - type: textarea
+    id: sections
+    attributes:
+      label: Affected sections and artifacts
+      description: Identify expected changes to spec.md, schema, conformance cases, or examples.
+    validations:
+      required: true
+  - type: textarea
+    id: compatibility
+    attributes:
+      label: Compatibility and interoperability
+      description: Explain how existing producers and consumers would handle the change.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Describe alternatives and why they do not address the use case as well.

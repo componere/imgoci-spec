@@ -1,0 +1,9 @@
+{
+  "cases": [
+    "cases/invalid-duplicate-tuple/case.json",
+    "cases/invalid-missing-annotation/case.json",
+    "cases/invalid-noncanonical-json/case.json",
+    "cases/resolve-compression-order/case.json",
+    "cases/valid-minimal/case.json"
+  ]
+}

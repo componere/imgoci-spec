@@ -1,0 +1,49 @@
+name: Specification defect
+description: Report ambiguity, contradiction, or an incorrect derived artifact.
+title: "spec: "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this form for defects in existing text or informative artifacts.
+        Report security vulnerabilities privately as described in SECURITY.md.
+  - type: input
+    id: revision
+    attributes:
+      label: Specification revision
+      description: Provide a tag, commit, or state that this concerns the current draft.
+    validations:
+      required: true
+  - type: input
+    id: section
+    attributes:
+      label: Affected section or artifact
+      description: Identify the section number or repository path.
+    validations:
+      required: true
+  - type: textarea
+    id: current
+    attributes:
+      label: Current behavior or wording
+      description: Quote only the minimum text needed or describe the derived-artifact behavior.
+    validations:
+      required: true
+  - type: textarea
+    id: defect
+    attributes:
+      label: Defect
+      description: Explain the ambiguity, contradiction, or mismatch.
+    validations:
+      required: true
+  - type: textarea
+    id: impact
+    attributes:
+      label: Interoperability impact
+      description: Explain how producers, consumers, or independent implementations may differ.
+    validations:
+      required: true
+  - type: textarea
+    id: correction
+    attributes:
+      label: Suggested correction
+      description: Optional proposed wording or artifact correction.

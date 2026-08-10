@@ -1,0 +1,206 @@
+name: Validate
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+  workflow_call:
+
+permissions: {}
+
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Install validators
+        run: >-
+          python3 -m pip install --disable-pip-version-check
+          check-jsonschema==0.38.0
+          rfc8785==0.1.4
+
+      - name: Validate repository metadata
+        run: |
+          check-jsonschema --builtin-schema vendor.github-workflows .github/workflows/*.yml
+          check-jsonschema --builtin-schema vendor.github-issue-forms .github/ISSUE_TEMPLATE/*.yml
+
+      - name: Validate JSON schemas
+        run: >-
+          check-jsonschema --check-metaschema
+          schema/release-index-v1.schema.json
+          conformance/case.schema.json
+
+      - name: Validate case metadata
+        run: >-
+          check-jsonschema
+          --schemafile conformance/case.schema.json
+          conformance/v1/cases/*/case.json
+
+      - name: Validate corpus structure and fixture bytes
+        run: |
+          python3 - <<'PY'
+          import json
+          import pathlib
+          import re
+
+          import rfc8785
+          from jsonschema import Draft202012Validator
+
+          root = pathlib.Path.cwd().resolve()
+          corpus_root = (root / "conformance" / "v1").resolve()
+          inventory_path = corpus_root / "cases.json"
+          inventory = json.loads(inventory_path.read_text(encoding="utf-8"))
+
+          if set(inventory) != {"cases"}:
+              raise SystemExit("conformance/v1/cases.json must contain only 'cases'")
+
+          listed = inventory["cases"]
+          if not isinstance(listed, list) or not listed:
+              raise SystemExit("conformance/v1/cases.json must list at least one case")
+          if listed != sorted(listed):
+              raise SystemExit("case inventory must be sorted")
+          if len(listed) != len(set(listed)):
+              raise SystemExit("case inventory contains duplicate paths")
+
+          actual = sorted(
+              str(path.relative_to(corpus_root))
+              for path in corpus_root.glob("cases/*/case.json")
+          )
+          if listed != actual:
+              raise SystemExit(
+                  f"case inventory differs from case directories: listed={listed!r} actual={actual!r}"
+              )
+
+          case_schema = json.loads(
+              (root / "conformance" / "case.schema.json").read_text(encoding="utf-8")
+          )
+          index_schema = json.loads(
+              (root / "schema" / "release-index-v1.schema.json").read_text(
+                  encoding="utf-8"
+              )
+          )
+          case_validator = Draft202012Validator(case_schema)
+          index_validator = Draft202012Validator(index_schema)
+
+          section_pattern = re.compile(r"^#{2,6} ([0-9]+(?:\.[0-9]+)*)\b", re.MULTILINE)
+          spec_sections = set(
+              section_pattern.findall((root / "spec.md").read_text(encoding="utf-8"))
+          )
+
+          seen_ids = set()
+          for relative_case in listed:
+              case_path = (corpus_root / relative_case).resolve()
+              try:
+                  case_path.relative_to(corpus_root)
+              except ValueError as error:
+                  raise SystemExit(f"case path escapes corpus: {relative_case}") from error
+              if not case_path.is_file():
+                  raise SystemExit(f"missing case metadata: {relative_case}")
+
+              case = json.loads(case_path.read_text(encoding="utf-8"))
+              case_validator.validate(case)
+
+              case_id = case["id"]
+              if case_id in seen_ids:
+                  raise SystemExit(f"duplicate case id: {case_id}")
+              seen_ids.add(case_id)
+              if case_path.parent.name != case_id:
+                  raise SystemExit(f"case directory must match id: {relative_case}")
+
+              for reference in case["references"]:
+                  if reference["section"] not in spec_sections:
+                      raise SystemExit(
+                          f"{case_id} references missing section {reference['section']}"
+                      )
+
+              index_path = (case_path.parent / case["input"]["index"]).resolve()
+              try:
+                  index_path.relative_to(case_path.parent)
+              except ValueError as error:
+                  raise SystemExit(f"{case_id} index path escapes case directory") from error
+              raw_index = index_path.read_bytes()
+              parsed_index = json.loads(raw_index)
+
+              schema_valid = not list(index_validator.iter_errors(parsed_index))
+              if schema_valid != case["expected"]["schemaValid"]:
+                  raise SystemExit(
+                      f"{case_id} schema validity differs from expected metadata"
+                  )
+
+              canonical_json = raw_index == rfc8785.dumps(parsed_index)
+              if canonical_json != case["expected"]["canonicalJson"]:
+                  raise SystemExit(
+                      f"{case_id} canonical JSON state differs from expected metadata"
+                  )
+
+              result_name = case["expected"].get("result")
+              if result_name is not None:
+                  result_path = (case_path.parent / result_name).resolve()
+                  try:
+                      result_path.relative_to(case_path.parent)
+                  except ValueError as error:
+                      raise SystemExit(
+                          f"{case_id} result path escapes case directory"
+                      ) from error
+                  json.loads(result_path.read_text(encoding="utf-8"))
+
+          print(f"validated {len(listed)} conformance cases")
+          PY
+
+      - name: Validate local Markdown links
+        run: |
+          python3 - <<'PY'
+          import pathlib
+          import re
+          import urllib.parse
+
+          root = pathlib.Path.cwd().resolve()
+          link_pattern = re.compile(r"(?<!!)\[[^\]]+\]\(([^)]+)\)")
+          errors = []
+
+          for document in sorted(root.rglob("*.md")):
+              if ".git" in document.parts:
+                  continue
+              prose = []
+              fence = None
+              for line in document.read_text(encoding="utf-8").splitlines():
+                  stripped = line.lstrip()
+                  if fence is not None:
+                      if stripped.startswith(fence):
+                          fence = None
+                      continue
+                  if stripped.startswith("~~~"):
+                      fence = "~~~"
+                      continue
+                  if stripped.startswith("```"):
+                      fence = "```"
+                      continue
+                  prose.append(line)
+              text = re.sub(r"`[^`]*`", "", "\n".join(prose))
+              for target in link_pattern.findall(text):
+                  target = target.strip().strip("<>")
+                  if target.startswith(("http://", "https://", "mailto:", "#")):
+                      continue
+                  path_text = urllib.parse.unquote(target.split("#", 1)[0])
+                  if not path_text:
+                      continue
+                  resolved = (document.parent / path_text).resolve()
+                  try:
+                      resolved.relative_to(root)
+                  except ValueError:
+                      errors.append(f"{document.relative_to(root)}: path escapes repository: {target}")
+                      continue
+                  if not resolved.exists():
+                      errors.append(f"{document.relative_to(root)}: missing link target: {target}")
+
+          if errors:
+              raise SystemExit("\n".join(errors))
+          PY

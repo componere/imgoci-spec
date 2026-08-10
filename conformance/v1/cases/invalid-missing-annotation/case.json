@@ -1,0 +1,26 @@
+{
+  "$schema": "../../../case.schema.json",
+  "id": "invalid-missing-annotation",
+  "summary": "A file-entry descriptor omits its required content digest annotation.",
+  "appliesTo": [
+    "consumer"
+  ],
+  "operation": "validate-release-index",
+  "input": {
+    "index": "index.json"
+  },
+  "references": [
+    {
+      "section": "5.2"
+    },
+    {
+      "section": "6",
+      "item": 2
+    }
+  ],
+  "expected": {
+    "outcome": "invalid",
+    "schemaValid": false,
+    "canonicalJson": true
+  }
+}

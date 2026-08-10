@@ -1,0 +1,26 @@
+{
+  "$schema": "../../../case.schema.json",
+  "id": "invalid-noncanonical-json",
+  "summary": "An otherwise valid index is not encoded in RFC 8785 canonical form.",
+  "appliesTo": [
+    "consumer"
+  ],
+  "operation": "validate-release-index",
+  "input": {
+    "index": "index.json"
+  },
+  "references": [
+    {
+      "section": "6",
+      "item": 10
+    },
+    {
+      "section": "9"
+    }
+  ],
+  "expected": {
+    "outcome": "invalid",
+    "schemaValid": true,
+    "canonicalJson": false
+  }
+}

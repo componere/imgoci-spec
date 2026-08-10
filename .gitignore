@@ -1,0 +1,10 @@
+.DS_Store
+.idea/
+.vscode/
+*.swp
+
+.journal/
+.wt/
+.venv/
+__pycache__/
+dist/
