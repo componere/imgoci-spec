@@ -9,8 +9,8 @@ prohibitions, recommendations, and permissions.
 
 ## 1. Scope
 
-imgoci describes a release made of one or more OS-image files. It stores the
-release and its files in one OCI repository.
+An imgoci release contains one or more OS image files. The release and its
+files are stored in one OCI repository.
 
 The format lets a consumer:
 
@@ -31,12 +31,12 @@ This specification does not define:
 - sparse-file restoration, delta transfer, update policy, or revocation; or
 - an index that groups several releases.
 
-Another catalog may be mapped into imgoci. That mapping does not mean that the
-catalog's existing reader can read imgoci objects.
+Another catalog may be mapped into imgoci. This does not make that catalog's
+reader compatible with imgoci objects.
 
 ## 2. Terms
 
-Examples are illustrative. They do not define new selector values.
+Examples do not define new selector values.
 
 | Term | Meaning | Examples |
 |---|---|---|
@@ -45,10 +45,10 @@ Examples are illustrative. They do not define new selector values.
 | Deliverable | All file entries with the same architecture, target, and representation. | `amd64`, `qemu`, and `qcow2`. |
 | File entry | One descriptor in the release index. | A descriptor for the `disk` role using `zstd` compression. |
 | File | All transport alternatives with the same deliverable key and role. | The `disk` role across its `none` and `zstd` alternatives. |
-| Transport alternative | One stored encoding of a file. It is selected by compression. | The `zstd` encoding of a `disk` file. |
+| Transport alternative | One stored encoding of a file. A consumer selects it by compression. | The `zstd` encoding of a `disk` file. |
 | Architecture | The CPU instruction set required by a deliverable. | `amd64` or `arm64`. |
 | Target | The boot or import environment for which a deliverable was built. | `qemu` or `metal`. |
-| Representation | The form requested by a consumer, such as a disk format or a coordinated network-boot set. | `qcow2` or `pxe`. |
+| Representation | The form a consumer requests, such as a disk format or a coordinated network-boot set. | `qcow2` or `pxe`. |
 | Role | The purpose of one file in a deliverable. | `disk`, `kernel`, or `initramfs`. |
 | Stored file | The bytes assembled from a BigOCI manifest. These bytes may be compressed. | A zstd stream reconstructed from BigOCI parts. |
 | Content | The bytes produced after decoding the stored file. | The qcow2 bytes produced by decoding a zstd stored file. |
@@ -86,16 +86,16 @@ A release index must contain only imgoci file entries. It must not mix file
 entries with container images or compatibility descriptors.
 
 Every file entry must point to a manifest that conforms to BigOCI File Format
-v1. That format represents a small file with one part and a large file with
-several parts. imgoci does not define another leaf format.
+v1. BigOCI uses one part for a small file and several parts for a large file.
+imgoci defines no other file-manifest format.
 
 The release index, file manifests, and blobs must be in the same OCI
 repository.
 
 A file-entry descriptor must not contain an OCI `platform` object.
 `io.imgoci.architecture` is the only architecture value used by this format.
-This rule prevents two sources of architecture metadata. It does not make a
-claim about how a general OCI image client will handle the index.
+This leaves one source of architecture metadata. This specification does not
+define how a general OCI image client handles the index.
 
 ## 4. Media types
 
@@ -134,18 +134,18 @@ The required index annotations are:
 
 | Annotation | Value |
 |---|---|
-| `io.imgoci.name` | Stable product identifier shared by its releases. |
+| `io.imgoci.name` | Stable product identifier shared by all releases of that product. |
 | `org.opencontainers.image.version` | Producer-assigned release version. |
 
 `io.imgoci.name` must be a basic token as defined in section 5.3.
 
 `org.opencontainers.image.version` must contain 1 to 128 printable ASCII
 characters. It must not contain whitespace or control characters. The version
-is metadata. This specification does not define how it maps to a tag or how
-two versions are ordered.
+is metadata. This specification does not define a tag mapping or version
+order.
 
-The digest of the canonical release index identifies the encoded release.
-Name and version are labels carried by that object.
+The canonical release-index digest identifies the encoded release. The name
+and version label that object.
 
 ### 5.2 File-entry descriptor
 
@@ -183,8 +183,9 @@ Other annotation keys are allowed on the release index and file-entry
 descriptors. Keys beginning with `io.imgoci.` are reserved for this
 specification. An imgoci v1 object must not use an undefined key in that
 namespace. Other annotations do not affect selection, but they affect the
-release-index digest. A producer should not add volatile annotations when it
-needs a reproducible digest.
+release-index digest. A producer that needs a reproducible digest should not
+add annotations whose values can differ across otherwise identical release
+indexes.
 
 ### 5.3 Value syntax
 
@@ -198,38 +199,36 @@ A basic token contains 1 to 128 ASCII bytes and must match:
 basic tokens.
 
 An architecture value must contain either one basic token or two basic tokens
-separated by `/`. A producer must use the OCI Image Index
-`platform.architecture` spelling for a public first token and the OCI
-`platform.variant` spelling for a public second token. A producer-defined
-architecture must use a private `x-` token. Examples include `amd64`, `arm64`,
-and `arm/v7`. Consumers validate architecture values by syntax, not by a fixed
-list.
+separated by `/`. For a public first token, a producer must use the OCI Image
+Index `platform.architecture` spelling. For a public second token, the producer
+must use the OCI `platform.variant` spelling. A producer-defined architecture
+must use a private `x-` token. Examples include `amd64`, `arm64`, and `arm/v7`.
+Consumers validate architecture values by syntax, not by a fixed list.
 
 `io.imgoci.content.digest` must be `sha256:` followed by 64 lowercase
 hexadecimal digits.
 
 `io.imgoci.content.size` must be a string matching
-`^(0|[1-9][0-9]*)$`. Its value must be no greater than
-9223372036854775807.
+`^(0|[1-9][0-9]*)$`. Its value must not exceed 9223372036854775807.
 
-Public selector values adopted by imgoci are append-only. Their meanings must
-not change. Public values are defined only by this specification or a later
-imgoci addendum. A producer must use a public value when it has a matching
-meaning. It must not mint a private synonym for that value. Other
+Public selector values are append-only, and their meanings must not change.
+They are defined only in this specification or a later imgoci addendum. When a
+public value matches the producer's intended meaning, the producer must use it.
+The producer must not define a private synonym for that value. Other
 producer-defined selector values must use `x-<owner>-<name>`. This naming rule
 does not apply to `io.imgoci.name` or the release version.
 
-Producer conformance uses the public-value registry. Consumer validation does
-not use it as an allowlist. A consumer must accept every syntactically valid
-value, preserve and return unknown values during discovery, and compare values
-exactly. An operation that must interpret an unknown value may report that it
-is unsupported.
+The public-value registry applies to producer conformance, not to consumer
+validation of selector values. A consumer must accept every syntactically valid
+value and compare values exactly. During discovery, it must preserve and return
+unknown values. An operation that must interpret an unknown value may report
+the value as unsupported.
 
-There are no wildcard values in imgoci v1. Omitting a query field is the only
-way to make that field broad. A producer must not assign special wildcard
-meaning to `any`, `*`, or another token.
+imgoci v1 has no wildcard values. A query matches every value for a field only
+when it omits that field. A producer must not assign special wildcard meaning
+to `any`, `*`, or another token.
 
-To classify one file for several architectures or targets, a producer emits
+To classify one file for more than one architecture or target, a producer emits
 one descriptor for each value. Those descriptors may share one BigOCI digest.
 
 A title must match:
@@ -246,12 +245,12 @@ compression.
 
 The tables in this section define the initial public-value registry. A later
 compatible revision or addendum may add a public value without changing the
-release-index shape. A new public value must follow section 5.3.
+release-index shape. A new public value must satisfy section 5.3.
 
 The initial target names come from platform identifiers used by Fedora CoreOS.
-The table defines them as imgoci values. Fedora CoreOS is not a normative or
-runtime dependency. Later changes to Fedora CoreOS do not change these
-definitions.
+This table defines those identifiers as imgoci values. Fedora CoreOS is not a
+normative or runtime dependency. Later changes to Fedora CoreOS do not change
+these definitions.
 
 #### Targets
 
@@ -280,13 +279,12 @@ definitions.
 | `vmware` | VMware ESXi, Fusion, and Workstation. |
 | `vultr` | Vultr. |
 
-These values name environment families. They do not promise compatibility
-with every version or configuration of the named environment. A producer must
-use a more specific value when a known difference affects whether the
-deliverable can be booted or imported and is not expressed by architecture or
-representation. The registry does not restrict target, architecture, and
-representation combinations. A producer may use any combination that
-describes the deliverable.
+These values identify environment families. They do not guarantee
+compatibility with every version or configuration of the named environment. If
+a known difference affects whether the deliverable can be booted or imported
+and neither architecture nor representation expresses it, a producer must use
+a more specific target. A producer may use any combination of target,
+architecture, and representation that describes the deliverable.
 
 #### Representations
 
@@ -299,23 +297,21 @@ describes the deliverable.
 | `pxe` | `kernel`, `initramfs`, `rootfs` | One coordinated network-boot set. |
 
 A deliverable using a standard representation must contain every required role
-listed for that representation. It may contain additional roles. Additional
-roles do not change the representation and are not required to consume it. An
-addendum that defines another representation must define its decoded form and
-required roles.
+listed for that representation. It may contain other roles. Those roles do not
+change the representation. A consumer does not need them to consume the
+representation. An addendum that defines another representation must define
+its decoded form and required roles.
 
 Representation and compression are separate. A compound source label such as
 `qcow2.xz` does not become an imgoci representation value.
 
-A wrapper that remains part of the selected deliverable form is part of the
-representation, not its compression. When the stored file has no additional
-outer transform, the entry uses `compression=none`. It may use private
-representation and role values until an imgoci addendum defines public values
-for that form.
+If a wrapper remains part of the selected deliverable form, it is part of the
+representation, not the compression. If the stored file has no outer transform
+beyond the representation, the entry uses `compression=none`. The entry may use
+private representation and role values until an imgoci addendum defines public
+values for that form.
 
 #### Compression
-
-The standard compression values are:
 
 | Value | Decoded content |
 |---|---|
@@ -331,8 +327,6 @@ bytes.
 
 #### Roles
 
-The following standard roles are defined:
-
 | Value | Meaning |
 |---|---|
 | `disk` | A disk or optical-media image. |
@@ -340,7 +334,7 @@ The following standard roles are defined:
 | `initramfs` | An initial RAM filesystem. |
 | `rootfs` | A root filesystem used with other boot files. |
 
-Roles are extensible. A new role does not require a new release media type.
+Adding a role does not require a new release media type.
 
 ### 5.5 Value meaning
 
@@ -354,10 +348,9 @@ product identity does not belong in a target value.
 
 Representation identifies the form requested by a consumer. It may describe
 one file, such as `qcow2`, or a coordinated file set, such as `pxe`.
-Representation is broader than a byte-container format.
 
-Role identifies one file inside a deliverable. Two distinct files in one
-deliverable must use distinct roles.
+Role identifies one file inside a deliverable. Two files in one deliverable
+must use different roles.
 
 Compression describes only the transform between the stored file and the
 content. It must not select a different logical file.
@@ -369,9 +362,9 @@ deliverable.
 
 The release index is invalid if any of these conditions is true:
 
-1. The root object breaks section 5.1.
-2. A descriptor breaks section 5.2.
-3. A required value breaks section 5.3.
+1. The root object does not satisfy section 5.1.
+2. A descriptor does not satisfy section 5.2.
+3. A required value does not satisfy section 5.3.
 4. A deliverable using a standard representation is missing a required role
    listed in section 5.4.
 5. Two entries have the same
@@ -389,8 +382,8 @@ Descriptors that share a BigOCI manifest digest may differ in architecture,
 target, representation, role, and title. This allows one stored file to be
 classified for more than one deliverable without copying it.
 
-A consumer must reject the whole invalid index. It must not ignore a bad entry
-and continue with the remaining entries.
+If an index is invalid, a consumer must reject the entire index. It must not
+ignore an invalid entry and continue with the remaining entries.
 
 ## 7. Discovery and selection
 
@@ -402,23 +395,24 @@ matches. It does not choose one.
 The caller supplies an OCI reference.
 
 Before fetching the release, a consumer must validate the query. Every query
-value must follow section 5.3. A role list, when present, must be non-empty and
-must not contain duplicates. A resolve query's accepted-compression list must
-be non-empty and must not contain duplicates.
+value must satisfy section 5.3. If present, a role list must be non-empty and
+must not contain duplicates. For a resolve query, the accepted-compression
+list must be non-empty and contain no duplicates.
 
 A consumer must:
 
 1. fetch the referenced release index;
 2. compute the SHA-256 digest of the exact response bytes;
-3. require that digest to match when the caller supplied a digest reference;
-4. when the registry provides a manifest digest, require it to be the computed
-   SHA-256 digest;
+3. if the caller supplied a digest reference, require the computed digest to
+   match the digest in that reference;
+4. if the registry provides a manifest digest, require that digest to match the
+   computed SHA-256 digest;
 5. use the computed digest to pin a tag reference;
 6. validate the complete release index; and
 7. use digest references for all later fetches.
 
-Catalog selection needs one release-index retrieval after registry
-authentication. This is not a promise of one network round trip.
+Selection requires one release-index retrieval after registry authentication.
+It can require more than one network round trip.
 
 ### 7.2 List deliverables
 
@@ -456,8 +450,8 @@ A consumer must:
 1. find the deliverable with the exact requested key;
 2. return `deliverable not found` if it does not exist;
 3. when the role list is omitted, select the required roles defined by this
-   specification or a supported addendum, or every role when no required-role
-   definition is known;
+   specification or a supported addendum. If no such definition is known,
+   select every role;
 4. require every requested role when a role list is present;
 5. return `role not found` without a partial result when a requested role is
    absent;
@@ -466,16 +460,17 @@ A consumer must:
 8. return `compression not available` without a partial result when a role
    has no accepted alternative.
 
-A one-item accepted-compression list is an exact compression request.
-Different roles may select different compressions.
+An accepted-compression list with one item is an exact compression request. A
+consumer may select different compressions for different roles.
 
 The producer does not mark one compression as preferred. Every transport
-alternative for a file produces the same content digest, size, and title.
+alternative for a file has the same content digest, size, and title.
 
 Before decoding content, a consumer must stop if it does not support the
-selected compression. An operation that needs to interpret a representation
-or role may also report an unsupported value. A consumer may still list,
-mirror, or verify stored files with unknown semantic selector values.
+selected compression. An operation that needs to interpret a representation or
+role may report the representation or role value as unsupported. A consumer may
+still list, mirror, or verify stored files whose selector values it does not
+understand.
 
 ## 8. Retrieval and verification
 
@@ -483,35 +478,36 @@ A consumer must fetch each selected BigOCI manifest by digest.
 
 For each selected file, the consumer must:
 
-1. compare the fetched manifest bytes and byte length with the descriptor
-   digest and size;
+1. verify the fetched manifest's SHA-256 digest against the descriptor digest
+   and the fetched manifest's byte length against the descriptor size;
 2. validate the manifest against BigOCI File Format v1;
-3. fetch the parts in any order and verify each part digest and size;
+3. fetch the parts in any order and verify each part's digest and size;
 4. assemble the parts in manifest order;
-5. verify the assembled stored-file digest and size required by BigOCI;
+5. verify the digest and size of the assembled stored file as required by
+   BigOCI;
 6. apply the declared compression decoder to the complete stored file;
 7. count and hash decoded bytes while writing them;
 8. stop if decoded output exceeds `io.imgoci.content.size`; and
-9. require the final decoded size and SHA-256 digest to equal the file-entry
-   annotations.
+9. require the final decoded size and SHA-256 digest to match the corresponding
+   file-entry annotations.
 
 When `compression=none`, the BigOCI whole-file digest and size must equal the
-imgoci content digest and size.
+corresponding imgoci content digest and size.
 
-The file-entry title names the decoded output. The BigOCI title remains
-informational and has no imgoci meaning.
+The file-entry title names the decoded output. The BigOCI title is
+informational only and has no imgoci meaning.
 
-A consumer must not treat a file as verified until that file has passed every
-required check. A decoding or integrity failure is not a selection miss. This
-specification does not define retry or fallback policy.
+A consumer must not treat a file as verified before it passes every required
+check. A decoding or integrity failure is not a selection failure. This
+specification does not define a retry or fallback policy.
 
 ## 9. Deterministic encoding
 
-BigOCI leaves use the canonical encoding defined by BigOCI File Format v1.
-imgoci must not add fields to them or re-encode them.
+BigOCI file manifests use the canonical encoding defined by BigOCI File Format
+v1. imgoci must not add fields to them or re-encode them.
 
-Before encoding a release index, a producer must validate rules 1 through 8 in
-section 6.
+Before encoding a release index, a producer must validate it against rules 1
+through 8 in section 6.
 
 The producer must sort `manifests` by this tuple:
 
@@ -522,17 +518,16 @@ The producer must sort `manifests` by this tuple:
 Each tuple field is compared by ascending UTF-8 byte order.
 
 The producer must then encode the full release index with the JSON
-Canonicalization Scheme in RFC 8785. The compact canonical bytes are the bytes
-sent to the registry.
+Canonicalization Scheme in RFC 8785. The producer sends the compact canonical
+bytes to the registry.
 
 A consumer must validate all ten rules in section 6 and reject an index whose
 descriptor order or JSON encoding is not canonical.
 
 The same release-index fields, descriptors, and annotations produce the same
-index bytes and digest. This statement does not mean that equal decoded content
-always produces the same OCI graph. BigOCI part size, BigOCI title, compressed
-bytes, descriptor metadata, and additional annotations are inputs to the
-resulting digests.
+index bytes and digest. Equal decoded content can still produce different OCI
+graphs. The resulting digests also depend on BigOCI part size, BigOCI title,
+compressed bytes, descriptor metadata, and other annotations.
 
 ## 10. References and tags
 
@@ -541,9 +536,9 @@ The caller supplies a tag or digest. imgoci v1 does not derive a tag from
 
 A digest reference used by imgoci v1 must use SHA-256.
 
-A tag is a lookup name. It is not release identity.
+A tag is a lookup name, not the identity of a release.
 
-Version comparison, tag escaping, tag enumeration, and multi-release catalogs
+Version comparison, tag escaping, tag listing, and multi-release catalogs
 are outside this specification.
 
 ## 11. External OCI artifacts
@@ -560,10 +555,10 @@ imgoci release.
 A conforming producer must emit objects that satisfy this document. A
 conforming consumer must reject objects that do not satisfy it.
 
-Non-normative conformance artifacts may include a JSON Schema and positive and
-negative fixtures. A JSON Schema can check structure and field syntax.
-Fixtures can cover cross-entry rules, canonical bytes, selection, BigOCI
-validation, and decoded-content verification.
+Non-normative conformance artifacts may include a JSON Schema, positive
+fixtures, and negative fixtures. A JSON Schema can check structure and field
+syntax. Fixtures can cover cross-entry rules, canonical bytes, selection,
+BigOCI validation, and decoded-content verification.
 
 ## 13. Non-normative examples
 
