@@ -3,6 +3,8 @@
 .vscode/
 *.swp
 
+.agents/
+.claude/
 .journal/
 .wt/
 .venv/
