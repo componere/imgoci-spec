@@ -14,3 +14,4 @@ This section records work completed before automated releases were enabled.
 ### Documentation
 
 - Clarified the draft specification language without changing normative intent.
+- Made the public target registry self-contained.
