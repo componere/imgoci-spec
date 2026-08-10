@@ -11,29 +11,32 @@ The specification is currently a draft.
 | Artifact | Status |
 |---|---|
 | [`spec.md`](spec.md) | Sole normative authority for the imgoci format. |
-| [`schema/`](schema/) | Official, informative structural-validation aid. |
+| [`schema/release-index-v1.cue`](schema/release-index-v1.cue) | Canonical machine-readable schema for parsed release-index values. |
+| [`schema/release-index-v1.schema.json`](schema/release-index-v1.schema.json) | Generated, best-effort JSON Schema compatibility layer. |
 | [`conformance/`](conformance/) | Official, informative examples and test cases derived from the specification. |
 | Repository documentation and automation | Informative project process and publication support. |
 
-If the specification, JSON Schema, conformance cases, or implementation
-behavior disagree, `spec.md` controls. A disagreement is a defect to correct
-in a later repository revision; it does not transfer authority to another
-artifact.
+The CUE schema controls when it and the generated JSON Schema differ. If the
+specification, CUE schema, conformance cases, or implementation behavior
+disagree, `spec.md` controls. A disagreement is a defect to correct in a later
+repository revision; it does not transfer authority to another artifact.
 
 ## Repository contents
 
 - [`spec.md`](spec.md) defines the format and required behavior.
+- [`schema/release-index-v1.cue`](schema/release-index-v1.cue) defines the
+  canonical machine-readable constraints for a parsed release index.
 - [`schema/release-index-v1.schema.json`](schema/release-index-v1.schema.json)
-  checks release-index structure and local field syntax.
+  provides generated compatibility for JSON Schema consumers.
 - [`conformance/v1/cases.json`](conformance/v1/cases.json) inventories the
   initial language-neutral conformance cases.
 - [`RELEASES.md`](RELEASES.md) describes publication mechanics.
 - [`CHANGELOG.md`](CHANGELOG.md) records changes to published artifacts.
 
-Passing JSON Schema validation alone does not establish conformance. Rules
-that depend on relationships between entries, exact encoded bytes, selection,
-retrieval, or BigOCI remain defined by `spec.md` and may be exercised by the
-conformance corpus.
+Passing CUE or JSON Schema validation alone does not establish conformance.
+CUE checks more relationships between file entries than JSON Schema. Rules
+that depend on exact encoded bytes, selection, retrieval, or BigOCI remain
+defined by `spec.md` and may be exercised by the conformance corpus.
 
 ## Implementation
 

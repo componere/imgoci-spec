@@ -1,192 +1,229 @@
 {
-  "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "imgoci release index v1",
-  "description": "Informative structural validation aid for imgoci release indexes. The normative specification controls if they differ.",
-  "type": "object",
-  "required": [
-    "schemaVersion",
-    "mediaType",
-    "artifactType",
-    "manifests",
-    "annotations"
-  ],
-  "properties": {
-    "schemaVersion": {
-      "const": 2
-    },
-    "mediaType": {
-      "const": "application/vnd.oci.image.index.v1+json"
-    },
-    "artifactType": {
-      "const": "application/vnd.imgoci.release.v1"
-    },
-    "manifests": {
-      "type": "array",
-      "minItems": 1,
-      "items": {
-        "$ref": "#/$defs/fileEntryDescriptor"
-      }
-    },
-    "annotations": {
-      "$ref": "#/$defs/indexAnnotations"
-    }
-  },
-  "additionalProperties": false,
-  "$defs": {
-    "basicToken": {
-      "type": "string",
-      "minLength": 1,
-      "maxLength": 128,
-      "pattern": "^[a-z0-9]+(?:[._-][a-z0-9]+)*$"
-    },
-    "sha256Digest": {
-      "type": "string",
-      "pattern": "^sha256:[0-9a-f]{64}$"
-    },
-    "imgociAnnotationName": {
-      "enum": [
-        "io.imgoci.name",
-        "io.imgoci.architecture",
-        "io.imgoci.target",
-        "io.imgoci.representation",
-        "io.imgoci.role",
-        "io.imgoci.compression",
-        "io.imgoci.content.digest",
-        "io.imgoci.content.size"
-      ]
-    },
-    "architecture": {
-      "oneOf": [
-        {
-          "$ref": "#/$defs/basicToken"
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$defs": {
+        "ArchitectureConstraint": {
+            "type": "string",
+            "description": "#ArchitectureConstraint is one basic token or two basic tokens separated by a\nslash. #ReleaseIndex additionally limits each token to 128 ASCII bytes.",
+            "maxLength": 257,
+            "minLength": 1,
+            "pattern": "^[a-z0-9]+([._-][a-z0-9]+)*(/[a-z0-9]+([._-][a-z0-9]+)*)?$"
         },
-        {
-          "type": "string",
-          "maxLength": 257,
-          "pattern": "^[a-z0-9]+(?:[._-][a-z0-9]+)*/[a-z0-9]+(?:[._-][a-z0-9]+)*$",
-          "$comment": "The specification limits each slash-separated token to 128 ASCII bytes. This portable schema applies only the safe aggregate limit; conformance checks enforce each component."
+        "BasicTokenConstraint": {
+            "type": "string",
+            "description": "#BasicTokenConstraint is a basic token: 1 to 128 ASCII bytes that match\n^[a-z0-9]+([._-][a-z0-9]+)*$.",
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[a-z0-9]+([._-][a-z0-9]+)*$"
+        },
+        "ContentSizeConstraint": {
+            "type": "string",
+            "description": "#ContentSizeConstraint is a string matching ^(0|[1-9][0-9]*)$.\n#ReleaseIndex additionally caps its numeric value at 9223372036854775807.",
+            "maxLength": 19,
+            "minLength": 1,
+            "pattern": "^(0|[1-9][0-9]*)$"
+        },
+        "FileEntryAnnotationsShape": {
+            "type": "object",
+            "description": "#FileEntryAnnotationsShape defines file-entry annotation constraints used by\nthe JSON Schema projection. The generator may omit constraints it cannot\nrepresent.",
+            "additionalProperties": true,
+            "properties": {
+                "io.imgoci.architecture": {
+                    "description": "io.imgoci.architecture is the architecture selector.",
+                    "$ref": "#/$defs/ArchitectureConstraint"
+                },
+                "io.imgoci.compression": {
+                    "description": "io.imgoci.compression is the decoder applied to the stored file.",
+                    "$ref": "#/$defs/BasicTokenConstraint"
+                },
+                "io.imgoci.content.digest": {
+                    "description": "io.imgoci.content.digest is the SHA-256 digest of the decoded content.",
+                    "$ref": "#/$defs/SHA256DigestConstraint"
+                },
+                "io.imgoci.content.size": {
+                    "description": "io.imgoci.content.size is the byte length of the decoded content, encoded as\na string matching ^(0|[1-9][0-9]*)$.",
+                    "$ref": "#/$defs/ContentSizeConstraint"
+                },
+                "io.imgoci.name": {
+                    "description": "io.imgoci.name is a stable product identifier when present.",
+                    "$ref": "#/$defs/BasicTokenConstraint"
+                },
+                "io.imgoci.representation": {
+                    "description": "io.imgoci.representation is the deliverable representation selector.",
+                    "$ref": "#/$defs/BasicTokenConstraint"
+                },
+                "io.imgoci.role": {
+                    "description": "io.imgoci.role is the file role.",
+                    "$ref": "#/$defs/BasicTokenConstraint"
+                },
+                "io.imgoci.target": {
+                    "description": "io.imgoci.target is the target selector.",
+                    "$ref": "#/$defs/BasicTokenConstraint"
+                },
+                "org.opencontainers.image.title": {
+                    "type": "string",
+                    "description": "org.opencontainers.image.title is a safe basename for the decoded content.",
+                    "$ref": "#/$defs/TitleConstraint"
+                }
+            },
+            "required": [
+                "io.imgoci.architecture",
+                "io.imgoci.compression",
+                "io.imgoci.content.digest",
+                "io.imgoci.content.size",
+                "io.imgoci.representation",
+                "io.imgoci.role",
+                "io.imgoci.target",
+                "org.opencontainers.image.title"
+            ]
+        },
+        "FileEntryDescriptorShape": {
+            "type": "object",
+            "description": "#FileEntryDescriptorShape defines the closed file-entry descriptor and local\nfield constraints used by the JSON Schema projection.",
+            "additionalProperties": false,
+            "properties": {
+                "annotations": {
+                    "description": "annotations describes the file entry and its decoded content.",
+                    "$ref": "#/$defs/FileEntryAnnotationsShape"
+                },
+                "digest": {
+                    "description": "digest is the SHA-256 digest of the BigOCI manifest.",
+                    "$ref": "#/$defs/SHA256DigestConstraint"
+                },
+                "mediaType": {
+                    "description": "mediaType identifies the referenced object as an OCI image manifest.",
+                    "const": "application/vnd.oci.image.manifest.v1+json"
+                },
+                "size": {
+                    "description": "size is the byte length of the BigOCI manifest, not the file content.",
+                    "$ref": "#/$defs/ManifestSizeConstraint"
+                }
+            },
+            "required": [
+                "annotations",
+                "digest",
+                "mediaType",
+                "size"
+            ]
+        },
+        "IndexAnnotationsShape": {
+            "type": "object",
+            "description": "#IndexAnnotationsShape defines release-index annotation constraints used by\nthe JSON Schema projection. The generator may omit constraints it cannot\nrepresent.",
+            "additionalProperties": true,
+            "properties": {
+                "io.imgoci.architecture": {
+                    "description": "io.imgoci.architecture is an architecture selector when present.",
+                    "$ref": "#/$defs/ArchitectureConstraint"
+                },
+                "io.imgoci.compression": {
+                    "description": "io.imgoci.compression is a decoder applied to a stored file when present.",
+                    "$ref": "#/$defs/BasicTokenConstraint"
+                },
+                "io.imgoci.content.digest": {
+                    "description": "io.imgoci.content.digest is a SHA-256 digest of decoded content when\npresent.",
+                    "$ref": "#/$defs/SHA256DigestConstraint"
+                },
+                "io.imgoci.content.size": {
+                    "description": "io.imgoci.content.size is the byte length of decoded content when present.",
+                    "$ref": "#/$defs/ContentSizeConstraint"
+                },
+                "io.imgoci.name": {
+                    "description": "io.imgoci.name is the stable product identifier shared by all releases of\nthat product.",
+                    "$ref": "#/$defs/BasicTokenConstraint"
+                },
+                "io.imgoci.representation": {
+                    "description": "io.imgoci.representation is a deliverable representation selector when\npresent.",
+                    "$ref": "#/$defs/BasicTokenConstraint"
+                },
+                "io.imgoci.role": {
+                    "description": "io.imgoci.role is a file role when present.",
+                    "$ref": "#/$defs/BasicTokenConstraint"
+                },
+                "io.imgoci.target": {
+                    "description": "io.imgoci.target is a target selector when present.",
+                    "$ref": "#/$defs/BasicTokenConstraint"
+                },
+                "org.opencontainers.image.version": {
+                    "type": "string",
+                    "description": "org.opencontainers.image.version is the producer-assigned release version.\nIt is metadata; imgoci defines neither a tag mapping nor version order.",
+                    "$ref": "#/$defs/ReleaseVersionConstraint"
+                }
+            },
+            "required": [
+                "io.imgoci.name",
+                "org.opencontainers.image.version"
+            ]
+        },
+        "ManifestSizeConstraint": {
+            "description": "#ManifestSizeConstraint is a JSON integer from 1 through 9007199254740991.",
+            "allOf": [
+                {
+                    "type": "number"
+                },
+                {
+                    "type": "integer",
+                    "maximum": 9007199254740991,
+                    "minimum": 1
+                }
+            ]
+        },
+        "ReleaseIndexShape": {
+            "type": "object",
+            "description": "#ReleaseIndexShape defines the closed release-index object and local field\nconstraints used by the JSON Schema projection.",
+            "additionalProperties": false,
+            "properties": {
+                "annotations": {
+                    "description": "annotations labels the release index with its stable product identifier and\nproducer-assigned release version. It may contain other OCI annotations.",
+                    "$ref": "#/$defs/IndexAnnotationsShape"
+                },
+                "artifactType": {
+                    "description": "artifactType identifies the object as an imgoci v1 release index.",
+                    "const": "application/vnd.imgoci.release.v1"
+                },
+                "manifests": {
+                    "type": "array",
+                    "description": "manifests contains one file-entry descriptor for each transport\nalternative. It must contain at least one file-entry descriptor.",
+                    "items": {
+                        "$ref": "#/$defs/FileEntryDescriptorShape"
+                    },
+                    "minItems": 1
+                },
+                "mediaType": {
+                    "description": "mediaType identifies the object as an OCI image index.",
+                    "const": "application/vnd.oci.image.index.v1+json"
+                },
+                "schemaVersion": {
+                    "description": "schemaVersion identifies the OCI image-index schema version and must be 2.",
+                    "const": 2
+                }
+            },
+            "required": [
+                "annotations",
+                "artifactType",
+                "manifests",
+                "mediaType",
+                "schemaVersion"
+            ]
+        },
+        "ReleaseVersionConstraint": {
+            "type": "string",
+            "description": "#ReleaseVersionConstraint contains 1 to 128 printable ASCII characters and no\nwhitespace or control characters.",
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[!-~]+$"
+        },
+        "SHA256DigestConstraint": {
+            "type": "string",
+            "description": "#SHA256DigestConstraint is sha256: followed by 64 lowercase hexadecimal\ndigits.",
+            "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        "TitleConstraint": {
+            "type": "string",
+            "description": "#TitleConstraint is one safe path component containing 1 to 255 ASCII bytes\nthat match ^[a-z0-9]([a-z0-9._+-]{0,253}[a-z0-9])?$.",
+            "maxLength": 255,
+            "minLength": 1,
+            "pattern": "^[a-z0-9]([a-z0-9._+-]{0,253}[a-z0-9])?$"
         }
-      ]
     },
-    "contentSize": {
-      "type": "string",
-      "maxLength": 19,
-      "pattern": "^(?:0|[1-9][0-9]*)$",
-      "$comment": "The specification also caps the numeric value at 9223372036854775807. JSON Schema cannot compare an integer encoded as a string without an opaque range regex or extension keyword."
-    },
-    "title": {
-      "type": "string",
-      "maxLength": 255,
-      "pattern": "^[a-z0-9](?:[a-z0-9._+-]{0,253}[a-z0-9])?$"
-    },
-    "indexAnnotations": {
-      "type": "object",
-      "required": [
-        "io.imgoci.name",
-        "org.opencontainers.image.version"
-      ],
-      "properties": {
-        "io.imgoci.name": {
-          "$ref": "#/$defs/basicToken"
-        },
-        "org.opencontainers.image.version": {
-          "type": "string",
-          "minLength": 1,
-          "maxLength": 128,
-          "pattern": "^[!-~]+$"
-        }
-      },
-      "propertyNames": {
-        "anyOf": [
-          {
-            "not": {
-              "pattern": "^io\\.imgoci\\."
-            }
-          },
-          {
-            "$ref": "#/$defs/imgociAnnotationName"
-          }
-        ]
-      },
-      "additionalProperties": true
-    },
-    "fileEntryAnnotations": {
-      "type": "object",
-      "required": [
-        "io.imgoci.architecture",
-        "io.imgoci.target",
-        "io.imgoci.representation",
-        "io.imgoci.role",
-        "io.imgoci.compression",
-        "io.imgoci.content.digest",
-        "io.imgoci.content.size",
-        "org.opencontainers.image.title"
-      ],
-      "properties": {
-        "io.imgoci.architecture": {
-          "$ref": "#/$defs/architecture"
-        },
-        "io.imgoci.target": {
-          "$ref": "#/$defs/basicToken"
-        },
-        "io.imgoci.representation": {
-          "$ref": "#/$defs/basicToken"
-        },
-        "io.imgoci.role": {
-          "$ref": "#/$defs/basicToken"
-        },
-        "io.imgoci.compression": {
-          "$ref": "#/$defs/basicToken"
-        },
-        "io.imgoci.content.digest": {
-          "$ref": "#/$defs/sha256Digest"
-        },
-        "io.imgoci.content.size": {
-          "$ref": "#/$defs/contentSize"
-        },
-        "org.opencontainers.image.title": {
-          "$ref": "#/$defs/title"
-        }
-      },
-      "propertyNames": {
-        "anyOf": [
-          {
-            "not": {
-              "pattern": "^io\\.imgoci\\."
-            }
-          },
-          {
-            "$ref": "#/$defs/imgociAnnotationName"
-          }
-        ]
-      },
-      "additionalProperties": true
-    },
-    "fileEntryDescriptor": {
-      "type": "object",
-      "required": [
-        "mediaType",
-        "digest",
-        "size",
-        "annotations"
-      ],
-      "properties": {
-        "mediaType": {
-          "const": "application/vnd.oci.image.manifest.v1+json"
-        },
-        "digest": {
-          "$ref": "#/$defs/sha256Digest"
-        },
-        "size": {
-          "type": "integer",
-          "minimum": 1,
-          "maximum": 9007199254740991
-        },
-        "annotations": {
-          "$ref": "#/$defs/fileEntryAnnotations"
-        }
-      },
-      "additionalProperties": false
-    }
-  }
+    "description": "#ReleaseIndexJSONSchema is the best-effort JSON Schema compatibility\nprojection. It preserves the closed object shapes and local field constraints\nthat CUE can translate without weakening #ReleaseIndex.",
+    "$ref": "#/$defs/ReleaseIndexShape"
 }

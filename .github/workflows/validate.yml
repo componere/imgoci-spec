@@ -21,11 +21,88 @@ jobs:
         with:
           persist-credentials: false
 
+      - name: Install CUE
+        uses: cue-lang/setup-cue@a93fa358375740cd8b0078f76355512b9208acb1 # v1.0.1
+        with:
+          version: v0.17.1
+
       - name: Install validators
         run: >-
           python3 -m pip install --disable-pip-version-check
           check-jsonschema==0.38.0
           rfc8785==0.1.4
+
+      - name: Validate CUE schema and generated JSON Schema
+        run: |
+          cd schema
+          cue fmt --check --files .
+          cue mod tidy --check
+          cue vet -c ./...
+
+          generated_dir="$(mktemp -d)"
+          cue def --out jsonschema \
+            -e '#ReleaseIndexJSONSchema' \
+            -o "${generated_dir}/release-index-v1.schema.json" \
+            .
+          diff -u release-index-v1.schema.json \
+            "${generated_dir}/release-index-v1.schema.json"
+
+          for case_id in \
+            valid-minimal \
+            resolve-compression-order \
+            invalid-noncanonical-json
+          do
+            cue vet -c -d '#ReleaseIndex' . \
+              "../conformance/v1/cases/${case_id}/index.json"
+          done
+
+          for case_id in \
+            invalid-missing-annotation \
+            invalid-duplicate-tuple
+          do
+            if cue vet -c -d '#ReleaseIndex' . \
+              "../conformance/v1/cases/${case_id}/index.json" \
+              >/dev/null 2>&1
+            then
+              echo "CUE unexpectedly accepted ${case_id}" >&2
+              exit 1
+            fi
+          done
+
+          reject_mutation() {
+            case_name="$1"
+            source_file="$2"
+            filter="$3"
+            output_file="${generated_dir}/${case_name}.json"
+            jq "$filter" "$source_file" > "${output_file}"
+            if cue vet -c -d '#ReleaseIndex' . "${output_file}" \
+              >/dev/null 2>&1
+            then
+              echo "CUE unexpectedly accepted ${case_name}" >&2
+              return 1
+            fi
+          }
+
+          base=../conformance/v1/cases/valid-minimal/index.json
+          alternatives=../conformance/v1/cases/resolve-compression-order/index.json
+          reject_mutation missing-disk-role "$base" \
+            '.manifests[0].annotations["io.imgoci.representation"] = "raw"'
+          reject_mutation missing-pxe-roles "$base" \
+            '.manifests[0].annotations["io.imgoci.representation"] = "pxe" | .manifests[0].annotations["io.imgoci.role"] = "kernel"'
+          reject_mutation inconsistent-file-content "$alternatives" \
+            '.manifests[1].annotations["io.imgoci.content.digest"] = "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"'
+          reject_mutation duplicate-role-title "$alternatives" \
+            '.manifests = [.manifests[0], .manifests[1]] | .manifests[1].annotations["io.imgoci.role"] = "x-test-other"'
+          reject_mutation inconsistent-shared-manifest "$alternatives" \
+            '.manifests[1].digest = .manifests[0].digest'
+          reject_mutation noncanonical-order "$alternatives" \
+            '.manifests |= reverse'
+          reject_mutation overlong-architecture-token "$base" \
+            '.manifests[0].annotations["io.imgoci.architecture"] = (("a" * 129) + "/v7")'
+          reject_mutation oversized-content "$base" \
+            '.manifests[0].annotations["io.imgoci.content.size"] = "9223372036854775808"'
+          reject_mutation reserved-annotation "$base" \
+            '.annotations["io.imgoci.future"] = "x"'
 
       - name: Validate repository metadata
         run: |

@@ -15,8 +15,8 @@ axes. A repository tag does not change the wire-format identifier unless
    draft.
 2. Update [`CHANGELOG.md`](CHANGELOG.md) for the publication.
 3. Run the validation workflow against the exact release commit.
-4. Review `spec.md`, the JSON Schema, every listed conformance case, and their
-   authority labels together.
+4. Review `spec.md`, the canonical CUE schema, the generated JSON Schema, every
+   listed conformance case, and their authority labels together.
 5. Create and push an immutable `v*` tag for that commit.
 6. Let the release workflow build and attest the source publication archive,
    then publish the GitHub release.

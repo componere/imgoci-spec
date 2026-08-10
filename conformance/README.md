@@ -1,8 +1,8 @@
 # Conformance cases
 
 This directory contains official, informative cases derived from
-[`spec.md`](../spec.md). The specification is normative and controls if a case
-or its metadata disagrees with the text.
+[`spec.md`](../spec.md). The specification is normative and controls if a case,
+the canonical CUE schema, or case metadata disagrees with the text.
 
 `v1/cases.json` is the complete inventory for the initial corpus. Each listed
 directory contains:
@@ -28,16 +28,16 @@ compression, and manifest digest. They do not assert implementation error
 strings.
 
 Repository CI checks the case inventory, metadata schemas, referenced files,
-declared release-index schema result, and declared RFC 8785 byte state. It does
-not execute the semantic outcome of duplicate-tuple or resolution cases. A
-consumer conformance runner must execute those outcomes through the consumer's
-own API.
+declared JSON Schema result, canonical CUE validation for applicable parsed
+values, and declared RFC 8785 byte state. It does not execute resolution cases.
+A consumer conformance runner must execute those outcomes through the
+consumer's own API.
 
-`schemaValid` records whether the release-index JSON Schema is expected to
-accept the parsed value. `canonicalJson` records whether the original bytes are
-expected to equal their RFC 8785 encoding. These observations are separate
-because JSON Schema cannot test cross-entry relationships or original byte
-encoding.
+`schemaValid` records whether the generated release-index JSON Schema is
+expected to accept the parsed value. It does not record canonical CUE validity.
+`canonicalJson` records whether the original bytes are expected to equal their
+RFC 8785 encoding. These observations are separate because JSON Schema cannot
+test cross-entry relationships or original byte encoding.
 
 ## Exact bytes
 
