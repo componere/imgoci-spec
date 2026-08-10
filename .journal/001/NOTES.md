@@ -19,3 +19,15 @@ Reviewed the exact clean `master` commit `f243be7661cba553c7b07cd597fc3fab607c04
 Result: No obvious, provable contradiction was found, so this review requires no fixes.
 The closest candidates—producer registry rules versus forward-compatible consumer validation, complete compressed-input consumption versus early rejection after an exceeded decoded-size bound, informative schema limitations, and index-only conformance cases without BigOCI retrieval graphs—were each internally consistent once their explicit actor or validation boundary was applied.
 Next: Report the zero-finding result and the exact reviewed revision without adding out-of-scope ambiguity, completeness, style, or design commentary.
+
+## 2026-08-10 12:02 — Linguistic revision started
+Goal: Revise the draft for plain language, remove LLM-like or overly verbose wording, and fix grammar while preserving standard RFC-style requirements.
+Current state: Created isolated branch `feat/plain-language-spec` from freshly fetched `origin/master` at `f243be7661cba553c7b07cd597fc3fab607c042a` in `.wt/feat-plain-language-spec`; the default worktree remains clean.
+Plan: Edit in separate clarity, wording, and grammar/RFC-tone passes; validate the repository and inspect semantic drift; then commit, push, and open a draft pull request.
+
+## 2026-08-10 12:24 — Linguistic revision completed
+Revised `spec.md` in three passes for plain language, indirect wording, and grammar while preserving RFC-style terminology and normative force.
+Implementation commits: `24b9c98`, `162fef7`, and `405115e` on `feat/plain-language-spec`.
+Validation: `git diff --check`; workflow-pinned repository metadata, schema, conformance-case, corpus, and Markdown-link checks; and the hosted `Validate/validate` pull-request check all passed.
+Published draft PR [#1](https://github.com/componere/imgoci-spec/pull/1), `docs(spec): clarify draft language`.
+Next: Present the draft PR for user review. The journal session remains open.
