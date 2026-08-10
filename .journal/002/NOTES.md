@@ -43,3 +43,8 @@ Added the Release Please config and manifest, established the pre-bootstrap chan
 Configured repository variable `COMPONERE_RELEASE_APP_CLIENT_ID` and Actions secret `COMPONERE_RELEASE_APP_PRIVATE_KEY` directly from the `componere-release-please` item in the 1Password `Componere` vault without displaying either value. The installed GitHub App still has only metadata read plus issues and pull requests write permissions. Its registration must be granted `Contents: Read and write`, and the resulting installation permission update must be approved, before the new workflow can mint a usable token.
 
 Implementation checkpoint: `f730654 ci(release): add Release Please automation` on `feat/canonical-cue-schema`. The session remains open, with GitHub App permission approval as the only external blocker.
+
+## 2026-08-10 14:16 — Canonical schema merged
+Confirmed that the `componere-release-please` App installation now has contents, issues, and pull requests write permissions. Published the clean feature branch, opened PR #2 with head `f730654`, waited for its hosted validation, and squash-merged the exact reviewed head as `d106faa feat(schema): add canonical CUE release index (#2)`.
+
+The post-merge Validate and Release Please workflows both passed. Release Please successfully opened PR #3, `chore(master): release 0.1.0-draft.1`, whose validation also passed. Fast-forwarded the local `master` checkout to `d106faa`, removed the integrated Worktrunk feature worktree and local branch, and deleted the remote feature branch. The generated release PR remains open for separate review; session 002 remains open.
