@@ -1,6 +1,6 @@
 ---
 id: 002
-title: Awaiting task request
+title: Canonical CUE schema
 started: 2026-08-10
 ---
 
@@ -13,3 +13,10 @@ Plan: Receive the request, inspect the relevant repository state, work increment
 Goal for the session: Define the imgoci release index canonically in modern CUE, including helpful `error()` constraints and thorough spec-aligned comments, then generate JSON Schema as a best-effort compatibility layer.
 Current state of the world: `spec.md` and a handwritten `schema/release-index-v1.schema.json` exist on `master`; no CUE module exists yet. A clean implementation worktree was created at `feat/canonical-cue-schema` from `origin/master`.
 Plan: Map the normative specification, prototype the scoped CUE module and generation path, validate representative conforming and nonconforming values, then tighten comments and documentation against the specification.
+
+## 2026-08-10 13:04 — Canonical schema implemented
+Implemented a CUE v0.17.1 module scoped to `schema/`, with `#ReleaseIndex` as the canonical machine-readable schema and `#ReleaseIndexJSONSchema` as its best-effort compatibility projection. The CUE schema uses spec-aligned comments and custom `error()` diagnostics, and enforces local syntax plus required roles, duplicate tuples, cross-entry metadata consistency, unique role titles, shared-manifest consistency, descriptor ordering, exact architecture-token bounds, content-size bounds, and the reserved annotation namespace.
+
+Regenerated `schema/release-index-v1.schema.json`, documented the authority and compatibility boundaries, and extended CI with pinned CUE setup, generation-drift detection, existing conformance cases, and nine focused CUE-only regression mutations. Verified CUE formatting/module/vet, byte-for-byte generation, accepted and rejected fixture matrices, JSON and workflow schemas, conformance metadata and RFC 8785 bytes, local Markdown links, and diff hygiene. Independent review found no remaining actionable issues.
+
+Implementation checkpoint: `092061a feat(schema): add canonical CUE release index` on `feat/canonical-cue-schema`. The session remains open for user review or follow-up.
