@@ -92,29 +92,29 @@ jobs:
           name: spec-publication
           path: dist
 
-      - name: Create and publish GitHub release
+      - name: Publish Release Please draft
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           release_tag="${GITHUB_REF_NAME}"
 
-          if release_state="$(gh release view "${release_tag}" --repo "${GITHUB_REPOSITORY}" --json isDraft --jq .isDraft 2>/dev/null)"; then
-            if [[ "${release_state}" != "true" ]]; then
-              echo "release ${release_tag} is already published" >&2
-              exit 1
+          draft_ready=false
+          for attempt in $(seq 1 30); do
+            if release_state="$(gh release view "${release_tag}" --repo "${GITHUB_REPOSITORY}" --json isDraft --jq .isDraft 2>/dev/null)"; then
+              if [[ "${release_state}" != "true" ]]; then
+                echo "release ${release_tag} exists but is not a draft" >&2
+                exit 1
+              fi
+              draft_ready=true
+              break
             fi
-          else
-            release_arguments=(
-              --repo "${GITHUB_REPOSITORY}"
-              --verify-tag
-              --draft
-              --title "${release_tag}"
-              --generate-notes
-            )
-            if [[ "${release_tag}" == *-* ]]; then
-              release_arguments+=(--prerelease)
-            fi
-            gh release create "${release_tag}" "${release_arguments[@]}"
+            echo "draft release ${release_tag} is not ready yet; retrying (${attempt}/30)"
+            sleep 10
+          done
+
+          if [[ "${draft_ready}" != "true" ]]; then
+            echo "draft release ${release_tag} was not created by Release Please" >&2
+            exit 1
           fi
 
           gh release upload "${release_tag}" dist/* \

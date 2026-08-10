@@ -1,0 +1,22 @@
+project:
+  title: 'imgoci-spec'
+  description: 'Specification, schemas, and conformance cases for imgoci.'
+  owner: 'componere'
+  maintainers:
+    - 'componere'
+
+# mise owns the tool versions; Moon only orchestrates them.
+toolchains:
+  default: 'system'
+
+workspace:
+  inheritedTasks:
+    include: []
+
+tasks:
+  cue:
+    command: 'uv run --script --locked scripts/check_cue.py'
+    inputs: []
+    options:
+      cache: false
+      runInCI: true

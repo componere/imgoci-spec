@@ -1,9 +1,11 @@
 # Contributing
 
 Contributions should keep [`spec.md`](spec.md) as the sole source of normative
-requirements. Schema, conformance, examples, and repository tooling must be
-derived from the specification and must not introduce requirements of their
-own.
+requirements. The CUE schema is the canonical machine-readable schema derived
+from those requirements. The generated JSON Schema is a best-effort
+compatibility layer. Conformance cases, examples, and repository tooling must
+also be derived from the specification and must not introduce requirements of
+their own.
 
 Security vulnerabilities must be reported privately according to
 [`SECURITY.md`](SECURITY.md), not through public issues or pull requests.
@@ -27,7 +29,8 @@ Keep each pull request focused and classify it as one or more of:
 
 - editorial changes to `spec.md` that do not change requirements;
 - normative changes to `spec.md`;
-- informative schema or conformance changes derived from existing text; or
+- canonical CUE schema, generated JSON Schema, or conformance changes derived
+  from existing text; or
 - repository process and automation changes.
 
 When a pull request changes normative text, update any affected informative
@@ -38,11 +41,18 @@ change is derived.
 Before requesting review:
 
 1. Confirm that no normative requirement exists only outside `spec.md`.
-2. Confirm that JSON files parse and their schemas remain valid.
-3. Preserve exact bytes in cases that test canonical encoding.
-4. Update [`CHANGELOG.md`](CHANGELOG.md) when the change will affect a
+2. Run `mise trust --all`, then install the locked toolchain with
+   `mise install`.
+3. Run `mise exec -- moon run root:cue --summary minimal` from the repository
+   root. This checks CUE formatting and module state, validates the schema and
+   focused fixtures, and detects generated-schema drift.
+4. When intentionally changing the CUE projection, regenerate
+   `release-index-v1.schema.json` as described in
+   [`schema/README.md`](schema/README.md).
+5. Preserve exact bytes in cases that test canonical encoding.
+6. Update [`CHANGELOG.md`](CHANGELOG.md) when the change will affect a
    publication.
-5. Ensure the repository validation workflow passes.
+7. Ensure the CUE validation workflow passes.
 
 Do not copy implementation-specific APIs, error strings, or Go data structures
 into the specification artifacts. Conformance expectations should be stated in
