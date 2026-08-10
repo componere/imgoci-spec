@@ -27,3 +27,10 @@ Introduced the same locked mise and Moon workflow used by the sibling Meigma tem
 Reduced the validation workflow to a SHA-pinned checkout, SHA-pinned mise setup, and the single enforcement command `moon ci --force --summary minimal`. Updated contributor documentation for the shared local flow and Worktrunk-safe `mise trust --all`. Verified locked tool installation, both uv script locks, all 16 mise platform resolutions, byte-exact JSON Schema generation, the full Moon CI graph, and diff hygiene. Independent review found no remaining actionable issues.
 
 Implementation checkpoint: `e070ebf ci: manage validation with mise and Moon` on `feat/canonical-cue-schema`. The session remains open for user review or follow-up.
+
+## 2026-08-10 13:39 — Validation narrowed to CUE
+Removed the repository-wide enforcement that had exceeded the requested schema scope. Deleted the repository validator and its uv lock, including workflow and issue-form schema checks, conformance inventory and path rules, RFC 8785 byte checks, result-file parsing, and Markdown link checks.
+
+Moon now exposes one CI-enabled `root:cue` task with no repository input inventory. It runs only CUE formatting, module consistency, schema validation, generated JSON Schema byte-drift detection, and focused CUE constraint fixtures. Updated validation documentation to match and restored the unrelated pull-request-template wording. Both `mise exec -- moon run root:cue --summary minimal` and `mise exec -- moon ci --force --summary minimal` pass, as do the remaining uv lock and diff checks.
+
+Correction checkpoint: `ff344cd ci: limit validation to CUE` on `feat/canonical-cue-schema`. The session remains open for user review or follow-up.
