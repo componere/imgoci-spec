@@ -68,11 +68,19 @@ material from that implementation.
 ## Contributing
 
 See [`CONTRIBUTING.md`](CONTRIBUTING.md) for issue and pull-request guidance.
-Report security vulnerabilities according to [`SECURITY.md`](SECURITY.md).
+[`GOVERNANCE.md`](GOVERNANCE.md) defines project decision making and the
+public-value registry policy. Participation is covered by the
+[`Code of Conduct`](CODE_OF_CONDUCT.md). Report security vulnerabilities
+according to [`SECURITY.md`](SECURITY.md).
 
 ## License
 
-Licensed under either of
+The specification text ([`spec.md`](spec.md) and its addenda) is licensed
+under the Community Specification License 1.0
+([`LICENSE-COMMUNITY-SPEC`](LICENSE-COMMUNITY-SPEC)).
+
+All other repository content, including the schema, conformance corpus,
+scripts, and documentation, is licensed under either of
 
 - Apache License, Version 2.0 ([`LICENSE-APACHE`](LICENSE-APACHE)); or
 - MIT License ([`LICENSE-MIT`](LICENSE-MIT))
@@ -80,4 +88,6 @@ Licensed under either of
 at your option.
 
 Unless explicitly stated otherwise, contributions intentionally submitted for
-inclusion in this work are dual licensed under the same terms.
+inclusion in this work are licensed under the same split: specification-text
+contributions under the Community Specification License 1.0, and all other
+contributions dual licensed Apache-2.0 OR MIT.
