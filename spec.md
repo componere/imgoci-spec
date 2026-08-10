@@ -247,11 +247,6 @@ The tables in this section define the initial public-value registry. A later
 compatible revision or addendum may add a public value without changing the
 release-index shape. A new public value must satisfy section 5.3.
 
-The initial target names come from platform identifiers used by Fedora CoreOS.
-This table defines those identifiers as imgoci values. Fedora CoreOS is not a
-normative or runtime dependency. Later changes to Fedora CoreOS do not change
-these definitions.
-
 #### Targets
 
 | Value | Environment |
@@ -621,10 +616,3 @@ alternatives.
 - [RFC 8785: JSON Canonicalization Scheme](https://www.rfc-editor.org/rfc/rfc8785.html)
 - [QEMU v11.0.3 QCOW2 Image File Format](https://gitlab.com/qemu-project/qemu/-/blob/v11.0.3/docs/interop/qcow2.rst)
 - [ECMA-119, 6th edition](https://ecma-international.org/wp-content/uploads/ECMA-119_6th_edition_december_2025.pdf)
-
-## 15. Informative references
-
-- [Fedora CoreOS stable stream metadata, 2026-08-05](https://github.com/coreos/fedora-coreos-streams/blob/e914682fffa20695c07cf0960ee0d94b7b13de56/streams/stable.json)
-- [Fedora CoreOS supported platforms, 2026-08-06](https://github.com/coreos/fedora-coreos-docs/blob/afda1621b344c17b98f1216d35cf8104ffe6e1ff/modules/ROOT/pages/platforms.adoc)
-- [Fedora CoreOS bare-metal images, 2026-08-06](https://github.com/coreos/fedora-coreos-docs/blob/afda1621b344c17b98f1216d35cf8104ffe6e1ff/modules/ROOT/pages/bare-metal.adoc)
-- [Fedora CoreOS live ISO and PXE reference, 2026-08-06](https://github.com/coreos/fedora-coreos-docs/blob/afda1621b344c17b98f1216d35cf8104ffe6e1ff/modules/ROOT/pages/live-reference.adoc)
