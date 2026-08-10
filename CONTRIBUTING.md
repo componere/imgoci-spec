@@ -41,15 +41,19 @@ change is derived.
 Before requesting review:
 
 1. Confirm that no normative requirement exists only outside `spec.md`.
-2. Format and validate the CUE module with `cue fmt --check --files .`,
-   `cue mod tidy --check`, and `cue vet -c ./...` from `schema/`.
-3. Regenerate `release-index-v1.schema.json` from
-   `#ReleaseIndexJSONSchema` and confirm that JSON files parse and their schemas
-   remain valid.
-4. Preserve exact bytes in cases that test canonical encoding.
-5. Update [`CHANGELOG.md`](CHANGELOG.md) when the change will affect a
+2. Run `mise trust --all`, then install the locked toolchain with
+   `mise install`.
+3. Run `mise exec -- moon run root:check --summary minimal` from the repository
+   root. This includes CUE formatting and validation, generated-schema drift,
+   repository metadata, conformance declarations, exact fixture bytes, and
+   local links.
+4. When intentionally changing the CUE projection, regenerate
+   `release-index-v1.schema.json` as described in
+   [`schema/README.md`](schema/README.md).
+5. Preserve exact bytes in cases that test canonical encoding.
+6. Update [`CHANGELOG.md`](CHANGELOG.md) when the change will affect a
    publication.
-6. Ensure the repository validation workflow passes.
+7. Ensure the repository validation workflow passes.
 
 Do not copy implementation-specific APIs, error strings, or Go data structures
 into the specification artifacts. Conformance expectations should be stated in

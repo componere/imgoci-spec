@@ -38,6 +38,22 @@ CUE checks more relationships between file entries than JSON Schema. Rules
 that depend on exact encoded bytes, selection, retrieval, or BigOCI remain
 defined by `spec.md` and may be exercised by the conformance corpus.
 
+## Validation
+
+Tool versions are pinned for local and CI use in `mise.toml` and `mise.lock`.
+After cloning the repository or creating a worktree, run:
+
+```sh
+mise trust --all
+mise install
+mise exec -- moon run root:check --summary minimal
+```
+
+Moon runs the CUE checks, verifies that the generated JSON Schema is current,
+and validates repository metadata, conformance declarations, canonical fixture
+bytes, and local documentation links. CI installs the same locked tools and
+runs the same Moon tasks.
+
 ## Implementation
 
 [`componere/imgoci`](https://github.com/componere/imgoci) is the canonical Go

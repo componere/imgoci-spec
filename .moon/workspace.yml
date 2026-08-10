@@ -1,0 +1,14 @@
+# This repository is one explicit root project.
+projects:
+  sources:
+    root: '.'
+
+defaultProject: 'root'
+
+vcs:
+  defaultBranch: 'master'
+  provider: 'github'
+
+# mise installs tools and uv resolves each self-contained Python script.
+pipeline:
+  installDependencies: false

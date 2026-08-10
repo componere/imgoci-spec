@@ -14,7 +14,7 @@ the `explicitopen` experiment so closed structs translate predictably.
 From this directory, run:
 
 ```sh
-cue vet -c -d '#ReleaseIndex' . path/to/index.json
+mise exec -- cue vet -c -d '#ReleaseIndex' . path/to/index.json
 ```
 
 `#ReleaseIndex` checks the closed release-index and file-entry descriptor
@@ -45,17 +45,19 @@ stays stable across releases.
 `#ReleaseIndexJSONSchema`, the JSON-compatible projection in the CUE source:
 
 ```sh
-cue fmt --check --files .
-cue mod tidy --check
-cue def --force --out jsonschema \
+mise exec -- cue fmt --check --files .
+mise exec -- cue mod tidy --check
+mise exec -- cue def --force --out jsonschema \
   -e '#ReleaseIndexJSONSchema' \
   -o release-index-v1.schema.json \
   .
 ```
 
 The generated schema uses JSON Schema Draft 2020-12. CUE comments become JSON
-Schema descriptions. CI pins CUE v0.17.1 and fails when the committed JSON
-Schema differs from regenerated output.
+Schema descriptions. `mise.toml` and `mise.lock` pin CUE v0.17.1 for local and
+CI use. The `root:cue` Moon task fails when the committed JSON Schema differs
+from regenerated output. Run the complete repository gate from the repository
+root with `mise exec -- moon run root:check --summary minimal`.
 
 JSON Schema is a best-effort compatibility layer. It does not carry the exact
 architecture-component and string-encoded content-size bounds, reserved
