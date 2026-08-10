@@ -48,3 +48,7 @@ Verification: PR #5 remains draft, is `CLEAN` and `MERGEABLE`, and its post-reba
 ## 2026-08-10 16:23 — Slice 2 merged
 Integration: After explicit approval, marked PR #5 ready and squash-merged the pinned, validated head `f42f3d281c0656241d0d7e54d32260d5041be05e` as `0438a9e4b30d0ff5c56b82e10be900a441f6fe38`: https://github.com/componere/imgoci-spec/pull/5. Removed the clean `feat/incus-vm-format` worktree and local branch, deleted the merged remote branch, and fast-forwarded local `master` to the merge commit.
 Next boundary: Slice 2 is integrated. Slice 3 remains a separate change for CUE required-role constraints, generated schema output, and focused positive and negative conformance cases.
+
+## 2026-08-10 16:28 — Close
+Closeout: Session 003 is complete. PR #6 (`2467b50`) made the target registry self-contained, and PR #5 (`0438a9e`) landed the Incus VM representation; both were reviewed, squash-merged, and followed by successful hosted validation. Local `master` matches `origin/master`, both session implementation worktrees and branches are removed, and the disposable `imgoci-incus-spike` Lima instance is absent.
+Handoff: The real projection proof and minimal normative format are complete. Continue with a new session for slice 3 CUE/schema/fixture enforcement and slice 4 Incus 7.0 acceptance. Keep release PR #3 open until those gates pass.
