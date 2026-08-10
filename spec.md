@@ -94,7 +94,7 @@ repository.
 
 A file-entry descriptor must not contain an OCI `platform` object.
 `io.imgoci.architecture` is the only architecture value used by this format.
-This prevents conflicting architecture metadata. This specification does not
+This leaves one source of architecture metadata. This specification does not
 define how a general OCI image client handles the index.
 
 ## 4. Media types
@@ -184,7 +184,8 @@ descriptors. Keys beginning with `io.imgoci.` are reserved for this
 specification. An imgoci v1 object must not use an undefined key in that
 namespace. Other annotations do not affect selection, but they affect the
 release-index digest. A producer that needs a reproducible digest should not
-add annotations whose values change.
+add annotations whose values can differ across otherwise identical release
+indexes.
 
 ### 5.3 Value syntax
 
@@ -199,9 +200,9 @@ basic tokens.
 
 An architecture value must contain either one basic token or two basic tokens
 separated by `/`. For a public first token, a producer must use the OCI Image
-Index `platform.architecture` spelling. For a public second token, it must use
-the OCI `platform.variant` spelling. A producer-defined architecture must use
-a private `x-` token. Examples include `amd64`, `arm64`, and `arm/v7`.
+Index `platform.architecture` spelling. For a public second token, the producer
+must use the OCI `platform.variant` spelling. A producer-defined architecture
+must use a private `x-` token. Examples include `amd64`, `arm64`, and `arm/v7`.
 Consumers validate architecture values by syntax, not by a fixed list.
 
 `io.imgoci.content.digest` must be `sha256:` followed by 64 lowercase
@@ -212,16 +213,16 @@ hexadecimal digits.
 
 Public selector values are append-only, and their meanings must not change.
 They are defined only in this specification or a later imgoci addendum. When a
-public value has the required meaning, a producer must use it. The producer
-must not define a private synonym for that value. Other producer-defined
-selector values must use `x-<owner>-<name>`. This naming rule does not apply
-to `io.imgoci.name` or the release version.
+public value matches the producer's intended meaning, the producer must use it.
+The producer must not define a private synonym for that value. Other
+producer-defined selector values must use `x-<owner>-<name>`. This naming rule
+does not apply to `io.imgoci.name` or the release version.
 
-The public-value registry applies to producer conformance, not consumer
-selector-value validation. A consumer must accept every syntactically valid
-value and compare values exactly. During discovery, it must preserve and
-return unknown values. An operation that must interpret an unknown value may
-report the value as unsupported.
+The public-value registry applies to producer conformance, not to consumer
+validation of selector values. A consumer must accept every syntactically valid
+value and compare values exactly. During discovery, it must preserve and return
+unknown values. An operation that must interpret an unknown value may report
+the value as unsupported.
 
 imgoci v1 has no wildcard values. A query matches every value for a field only
 when it omits that field. A producer must not assign special wildcard meaning
@@ -280,10 +281,10 @@ these definitions.
 
 These values identify environment families. They do not guarantee
 compatibility with every version or configuration of the named environment. If
-a known difference affects boot or import and architecture or representation
-does not express it, a producer must use a more specific target. A producer may
-use any target, architecture, and representation combination that describes
-the deliverable.
+a known difference affects whether the deliverable can be booted or imported
+and neither architecture nor representation expresses it, a producer must use
+a more specific target. A producer may use any combination of target,
+architecture, and representation that describes the deliverable.
 
 #### Representations
 
@@ -296,23 +297,21 @@ the deliverable.
 | `pxe` | `kernel`, `initramfs`, `rootfs` | One coordinated network-boot set. |
 
 A deliverable using a standard representation must contain every required role
-listed for that representation. It may contain additional roles. Additional
-roles do not change the representation. A consumer does not need them to
-consume the representation. An addendum that defines another representation
-must define its decoded form and required roles.
+listed for that representation. It may contain other roles. Those roles do not
+change the representation. A consumer does not need them to consume the
+representation. An addendum that defines another representation must define
+its decoded form and required roles.
 
 Representation and compression are separate. A compound source label such as
 `qcow2.xz` does not become an imgoci representation value.
 
 If a wrapper remains part of the selected deliverable form, it is part of the
-representation, not the compression. If the stored file has no outer
-transform, the entry uses `compression=none`. The entry may use private
-representation and role values until an imgoci addendum defines public values
-for that form.
+representation, not the compression. If the stored file has no outer transform
+beyond the representation, the entry uses `compression=none`. The entry may use
+private representation and role values until an imgoci addendum defines public
+values for that form.
 
 #### Compression
-
-The standard compression values are:
 
 | Value | Decoded content |
 |---|---|
@@ -327,8 +326,6 @@ reject concatenated units, stream padding, skippable frames, and trailing
 bytes.
 
 #### Roles
-
-The following standard roles are defined:
 
 | Value | Meaning |
 |---|---|
@@ -346,7 +343,7 @@ hypervisor, cloud, firmware, or disk format.
 
 Target identifies the intended boot or import environment. A target value must
 distinguish known environment differences that affect whether a deliverable
-can be used and that architecture or representation does not express. OS
+can be used and are not properties of architecture or representation. OS
 product identity does not belong in a target value.
 
 Representation identifies the form requested by a consumer. It may describe
@@ -406,9 +403,10 @@ A consumer must:
 
 1. fetch the referenced release index;
 2. compute the SHA-256 digest of the exact response bytes;
-3. require that digest to match when the caller supplied a digest reference;
-4. when the registry provides a manifest digest, require it to be the computed
-   SHA-256 digest;
+3. if the caller supplied a digest reference, require the computed digest to
+   match the digest in that reference;
+4. if the registry provides a manifest digest, require that digest to match the
+   computed SHA-256 digest;
 5. use the computed digest to pin a tag reference;
 6. validate the complete release index; and
 7. use digest references for all later fetches.
@@ -452,8 +450,8 @@ A consumer must:
 1. find the deliverable with the exact requested key;
 2. return `deliverable not found` if it does not exist;
 3. when the role list is omitted, select the required roles defined by this
-   specification or a supported addendum, or every role when no required-role
-   definition is known;
+   specification or a supported addendum. If no such definition is known,
+   select every role;
 4. require every requested role when a role list is present;
 5. return `role not found` without a partial result when a requested role is
    absent;
@@ -462,16 +460,17 @@ A consumer must:
 8. return `compression not available` without a partial result when a role
    has no accepted alternative.
 
-An accepted-compression list with one item is an exact compression request.
-Different roles may select different compressions.
+An accepted-compression list with one item is an exact compression request. A
+consumer may select different compressions for different roles.
 
 The producer does not mark one compression as preferred. Every transport
 alternative for a file has the same content digest, size, and title.
 
 Before decoding content, a consumer must stop if it does not support the
-selected compression. An operation that needs to interpret a representation
-or role may also report an unsupported value. A consumer may still list,
-mirror, or verify stored files whose selector values it does not understand.
+selected compression. An operation that needs to interpret a representation or
+role may report the representation or role value as unsupported. A consumer may
+still list, mirror, or verify stored files whose selector values it does not
+understand.
 
 ## 8. Retrieval and verification
 
@@ -479,26 +478,27 @@ A consumer must fetch each selected BigOCI manifest by digest.
 
 For each selected file, the consumer must:
 
-1. compare the fetched manifest's SHA-256 digest and byte length with the
-   descriptor digest and size;
+1. verify the fetched manifest's SHA-256 digest against the descriptor digest
+   and the fetched manifest's byte length against the descriptor size;
 2. validate the manifest against BigOCI File Format v1;
-3. fetch the parts in any order and verify each part digest and size;
+3. fetch the parts in any order and verify each part's digest and size;
 4. assemble the parts in manifest order;
-5. verify the assembled stored-file digest and size required by BigOCI;
+5. verify the digest and size of the assembled stored file as required by
+   BigOCI;
 6. apply the declared compression decoder to the complete stored file;
 7. count and hash decoded bytes while writing them;
 8. stop if decoded output exceeds `io.imgoci.content.size`; and
-9. require the final decoded size and SHA-256 digest to equal the file-entry
-   annotations.
+9. require the final decoded size and SHA-256 digest to match the corresponding
+   file-entry annotations.
 
 When `compression=none`, the BigOCI whole-file digest and size must equal the
-imgoci content digest and size.
+corresponding imgoci content digest and size.
 
 The file-entry title names the decoded output. The BigOCI title is
 informational only and has no imgoci meaning.
 
-A consumer must treat a file as verified only after it passes every required
-check. A decoding or integrity failure is not a selection miss. This
+A consumer must not treat a file as verified before it passes every required
+check. A decoding or integrity failure is not a selection failure. This
 specification does not define a retry or fallback policy.
 
 ## 9. Deterministic encoding
@@ -536,7 +536,7 @@ The caller supplies a tag or digest. imgoci v1 does not derive a tag from
 
 A digest reference used by imgoci v1 must use SHA-256.
 
-A tag is a lookup name. It is not release identity.
+A tag is a lookup name, not the identity of a release.
 
 Version comparison, tag escaping, tag listing, and multi-release catalogs
 are outside this specification.
@@ -555,10 +555,10 @@ imgoci release.
 A conforming producer must emit objects that satisfy this document. A
 conforming consumer must reject objects that do not satisfy it.
 
-Non-normative conformance artifacts may include a JSON Schema and positive and
-negative fixtures. A JSON Schema can check structure and field syntax.
-Fixtures can cover cross-entry rules, canonical bytes, selection, BigOCI
-validation, and decoded-content verification.
+Non-normative conformance artifacts may include a JSON Schema, positive
+fixtures, and negative fixtures. A JSON Schema can check structure and field
+syntax. Fixtures can cover cross-entry rules, canonical bytes, selection,
+BigOCI validation, and decoded-content verification.
 
 ## 13. Non-normative examples
 
