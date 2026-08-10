@@ -43,17 +43,16 @@ Before requesting review:
 1. Confirm that no normative requirement exists only outside `spec.md`.
 2. Run `mise trust --all`, then install the locked toolchain with
    `mise install`.
-3. Run `mise exec -- moon run root:check --summary minimal` from the repository
-   root. This includes CUE formatting and validation, generated-schema drift,
-   repository metadata, conformance declarations, exact fixture bytes, and
-   local links.
+3. Run `mise exec -- moon run root:cue --summary minimal` from the repository
+   root. This checks CUE formatting and module state, validates the schema and
+   focused fixtures, and detects generated-schema drift.
 4. When intentionally changing the CUE projection, regenerate
    `release-index-v1.schema.json` as described in
    [`schema/README.md`](schema/README.md).
 5. Preserve exact bytes in cases that test canonical encoding.
 6. Update [`CHANGELOG.md`](CHANGELOG.md) when the change will affect a
    publication.
-7. Ensure the repository validation workflow passes.
+7. Ensure the CUE validation workflow passes.
 
 Do not copy implementation-specific APIs, error strings, or Go data structures
 into the specification artifacts. Conformance expectations should be stated in

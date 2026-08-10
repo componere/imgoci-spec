@@ -16,7 +16,7 @@ normative text from which the change is derived.
 
 ## Validation
 
-Describe the checks performed, including the relevant Moon tasks.
+Describe the checks performed.
 
 ## Checklist
 

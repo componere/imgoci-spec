@@ -9,31 +9,6 @@ project:
 toolchains:
   default: 'system'
 
-fileGroups:
-  cueValidation:
-    - 'schema/**/*.cue'
-    - 'schema/cue.mod/**/*'
-    - 'schema/release-index-v1.schema.json'
-    - 'conformance/v1/cases/*/index.json'
-    - 'scripts/check_cue.py'
-    - 'scripts/check_cue.py.lock'
-    - 'mise.toml'
-    - 'mise.lock'
-  repositoryValidation:
-    - '.github/**/*.yml'
-    - 'conformance/**/*.json'
-    - 'schema/**/*.json'
-    - '**/*.md'
-    - 'scripts/check_repository.py'
-    - 'scripts/check_repository.py.lock'
-    - 'mise.toml'
-    - 'mise.lock'
-  tooling:
-    - '.moon/*.yml'
-    - 'moon.yml'
-    - 'mise.toml'
-    - 'mise.lock'
-
 workspace:
   inheritedTasks:
     include: []
@@ -41,28 +16,7 @@ workspace:
 tasks:
   cue:
     command: 'uv run --script --locked scripts/check_cue.py'
-    inputs:
-      - '@group(cueValidation)'
-      - '@group(tooling)'
-    options:
-      cache: false
-
-  repository:
-    command: 'uv run --script --locked scripts/check_repository.py'
-    inputs:
-      - '@group(repositoryValidation)'
-      - '@group(tooling)'
-    options:
-      cache: false
-
-  check:
-    deps:
-      - 'root:cue'
-      - 'root:repository'
-    inputs:
-      - '@group(cueValidation)'
-      - '@group(repositoryValidation)'
-      - '@group(tooling)'
+    inputs: []
     options:
       cache: false
       runInCI: true

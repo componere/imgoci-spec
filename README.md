@@ -46,13 +46,12 @@ After cloning the repository or creating a worktree, run:
 ```sh
 mise trust --all
 mise install
-mise exec -- moon run root:check --summary minimal
+mise exec -- moon run root:cue --summary minimal
 ```
 
-Moon runs the CUE checks, verifies that the generated JSON Schema is current,
-and validates repository metadata, conformance declarations, canonical fixture
-bytes, and local documentation links. CI installs the same locked tools and
-runs the same Moon tasks.
+Moon checks CUE formatting and module state, validates the schema and focused
+fixtures, and verifies that the generated JSON Schema is current. CI installs
+the same locked tools and runs the same Moon task.
 
 ## Implementation
 

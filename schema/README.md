@@ -56,8 +56,8 @@ mise exec -- cue def --force --out jsonschema \
 The generated schema uses JSON Schema Draft 2020-12. CUE comments become JSON
 Schema descriptions. `mise.toml` and `mise.lock` pin CUE v0.17.1 for local and
 CI use. The `root:cue` Moon task fails when the committed JSON Schema differs
-from regenerated output. Run the complete repository gate from the repository
-root with `mise exec -- moon run root:check --summary minimal`.
+from regenerated output. Run it from the repository root with
+`mise exec -- moon run root:cue --summary minimal`.
 
 JSON Schema is a best-effort compatibility layer. It does not carry the exact
 architecture-component and string-encoded content-size bounds, reserved

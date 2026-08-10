@@ -10,5 +10,5 @@ associated schema and conformance artifacts.
 - Initial repository structure based on the imgoci release format v1 draft.
 - Canonical CUE module and release-index schema, with a generated JSON Schema
   compatibility layer.
-- Locked mise tooling, Moon validation tasks, and self-contained uv enforcement
-  scripts shared by local development and CI.
+- Locked mise tooling, a Moon CUE validation task, and a self-contained uv
+  enforcement script shared by local development and CI.
