@@ -34,3 +34,12 @@ Removed the repository-wide enforcement that had exceeded the requested schema s
 Moon now exposes one CI-enabled `root:cue` task with no repository input inventory. It runs only CUE formatting, module consistency, schema validation, generated JSON Schema byte-drift detection, and focused CUE constraint fixtures. Updated validation documentation to match and restored the unrelated pull-request-template wording. Both `mise exec -- moon run root:cue --summary minimal` and `mise exec -- moon ci --force --summary minimal` pass, as do the remaining uv lock and diff checks.
 
 Correction checkpoint: `ff344cd ci: limit validation to CUE` on `feat/canonical-cue-schema`. The session remains open for user review or follow-up.
+
+## 2026-08-10 14:10 — Release Please automation
+Added manifest-mode Release Please automation modeled on the sibling Meigma template. The new workflow authenticates as the `componere-release-please` GitHub App, maintains a release pull request from Conventional Commits on `master`, and begins the draft specification series at `v0.1.0-draft.1`. Release Please creates a draft release and force-creates its tag; the existing tag-triggered publication workflow now waits for that exact draft before uploading the attested archive and publishing it, avoiding a tag/release race.
+
+Added the Release Please config and manifest, established the pre-bootstrap changelog baseline, and documented the release and stable-promotion process. Config and workflow schemas pass, the complete Moon CUE gate passes, and an authenticated Release Please 17.6.0 local dry run proposes exactly one `0.1.0-draft.1` release pull request with the canonical CUE change in its generated changelog. Independent review found no remaining repository changes.
+
+Configured repository variable `COMPONERE_RELEASE_APP_CLIENT_ID` and Actions secret `COMPONERE_RELEASE_APP_PRIVATE_KEY` directly from the `componere-release-please` item in the 1Password `Componere` vault without displaying either value. The installed GitHub App still has only metadata read plus issues and pull requests write permissions. Its registration must be granted `Contents: Read and write`, and the resulting installation permission update must be approved, before the new workflow can mint a usable token.
+
+Implementation checkpoint: `f730654 ci(release): add Release Please automation` on `feat/canonical-cue-schema`. The session remains open, with GitHub App permission approval as the only external blocker.
