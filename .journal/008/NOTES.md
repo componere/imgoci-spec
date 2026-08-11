@@ -13,3 +13,8 @@ Plan: Create an isolated Worktrunk branch, materialize the current accepted and 
 Created `feat/simple-conformance-fixtures` from fetched `master`. Replaced the dynamic Python fixture construction and unused case metamodel with 12 passing and 21 failing complete release-index documents, `conformance/check.sh`, and a small schema/projection wrapper. Removed Python and uv from the pinned toolchain and updated repository guidance. The focused `root:cue` task and forced full Moon CI both pass. During editing, the patch helper initially targeted the clean `master` checkout; the exact scoped diff was transferred into the feature worktree and `master` was restored clean before validation.
 
 Next: Review the final diff, commit and push the feature branch, open a draft PR, and verify hosted checks.
+
+## 2026-08-11 09:54 — Draft PR opened
+Committed the refactor as `6195f7dc9e2cc84676def1741cc31ccab2c1ed1a`, pushed `feat/simple-conformance-fixtures`, and opened draft PR #14: https://github.com/componere/imgoci-spec/pull/14. GitHub reports the PR mergeable with the exact pushed head, and hosted `Validate` passed in 15 seconds.
+
+Next: Await review; session 008 remains open for follow-up and eventual closeout.
