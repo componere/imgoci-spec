@@ -123,7 +123,8 @@ define how a general OCI image client handles the index.
 ### 3.1 Standard file manifest
 
 A standard imgoci file manifest stores the complete stored file as one OCI
-blob. It must conform to the OCI image manifest and contain these members:
+blob. It must conform to the OCI image manifest and contain only these
+members:
 
 - `schemaVersion` with the number `2`;
 - `mediaType` with `application/vnd.oci.image.manifest.v1+json`;
@@ -131,7 +132,7 @@ blob. It must conform to the OCI image manifest and contain these members:
 - `config` with the OCI empty descriptor; and
 - `layers` with exactly one file-layer descriptor.
 
-The `config` member must identify the OCI empty descriptor with these required
+The `config` member must identify the OCI empty descriptor with only these
 members:
 
 ~~~json
@@ -144,10 +145,15 @@ members:
 
 The referenced config blob contains the two bytes `{}`.
 
-The file-layer descriptor's `mediaType` must be `application/octet-stream`.
-Its `digest` must use SHA-256. Its `size` must be a JSON integer from 0 through
-9223372036854775807. The manifest and its config and layer descriptors may use
-other optional members allowed by the OCI Image Format.
+The file-layer descriptor must contain only `mediaType`, `digest`, and
+`size`. Its `mediaType` must be `application/octet-stream`. Its `digest` must
+be `sha256:` followed by 64 lowercase hexadecimal digits. Its `size` must be a
+JSON integer from 0 through 9007199254740991.
+
+The manifest, its config descriptor, and its file-layer descriptor must not
+contain other members. The complete member set is fixed, so a standard file
+manifest is a function of its layer digest and layer size alone. Section 9
+defines its canonical encoding.
 
 The layer references the stored file without a wrapper, split, or transform
 beyond the compression declared by the file entry. Its repository blob URL
@@ -595,8 +601,9 @@ The consumer must then inspect the manifest's `artifactType` and recover the
 stored file as follows:
 
 1. For `application/vnd.imgoci.file.v1`, validate the manifest against section
-   3.1, fetch its file layer, and verify the layer digest and size. The layer
-   bytes are the stored file.
+   3.1 and reject it if its bytes are not in the canonical form defined in
+   section 9. Fetch its file layer and verify the layer digest and size. The
+   layer bytes are the stored file.
 2. For `application/vnd.bigoci.file.v1`, validate the manifest against BigOCI
    File Format v1 and require at least two parts. Fetch the parts in any order,
    verify each part's digest and size, assemble them in manifest order, and
@@ -629,9 +636,12 @@ not define network retries.
 
 ## 9. Deterministic encoding
 
-Standard imgoci file manifests use the JSON encoding rules of the OCI Image
-Format. imgoci adds no canonical encoding. The file-entry descriptor pins the
-exact manifest bytes by digest and size.
+A producer must encode a standard imgoci file manifest with the JSON
+Canonicalization Scheme in RFC 8785. Section 3.1 fixes the complete member
+set, so the same stored file produces the same standard file manifest, byte
+for byte, and the same digest. The layer-size limit in section 3.1 and the
+descriptor-size limit in section 5.2 keep every number in these objects
+exactly representable under RFC 8785.
 
 BigOCI file manifests use the canonical encoding defined by BigOCI File Format
 v1. imgoci must not add fields to them or re-encode them.
@@ -693,8 +703,9 @@ file-manifest validation, and decoded-content verification.
 
 ## 13. Non-normative examples
 
-The release-index example is pretty-printed for reading. Its digests are
-placeholders with valid syntax. A producer sends the compact RFC 8785 form.
+The examples are pretty-printed for reading. Their digests are placeholders
+with valid syntax. A producer sends the compact RFC 8785 form of the release
+index and of the standard file manifest.
 
 ~~~json
 {
