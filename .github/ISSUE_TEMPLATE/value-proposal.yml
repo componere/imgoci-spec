@@ -1,0 +1,74 @@
+name: Public value proposal
+description: Propose a new public selector value for the section 5.4 registry.
+title: "value: "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this form to propose a public target, representation, role, or
+        compression value. The registry policy in GOVERNANCE.md defines the
+        acceptance criteria. An `x-<owner>-<name>` value needs no proposal.
+  - type: dropdown
+    id: kind
+    attributes:
+      label: Value kind
+      options:
+        - target
+        - representation
+        - role
+        - compression
+    validations:
+      required: true
+  - type: input
+    id: token
+    attributes:
+      label: Proposed value
+      description: The exact token. It must follow the token syntax in spec.md section 5.3.
+    validations:
+      required: true
+  - type: textarea
+    id: definition
+    attributes:
+      label: Definition
+      description: >
+        For a target: the environment family and the boot or import difference
+        that architecture and representation do not express. For a
+        representation: the decoded form and its exact role set. For a role:
+        the purpose of the file in a deliverable. For a compression value: the
+        decoder behavior.
+    validations:
+      required: true
+  - type: textarea
+    id: reference
+    attributes:
+      label: Normative reference
+      description: >
+        A stable, publicly available document that defines the decoded form or
+        decoder. Required for representations and compression values.
+    validations:
+      required: false
+  - type: textarea
+    id: distinctness
+    attributes:
+      label: Distinctness
+      description: >
+        Name the closest existing public values and explain why the proposal
+        is not a synonym of any of them.
+    validations:
+      required: true
+  - type: textarea
+    id: use
+    attributes:
+      label: Intended use
+      description: >
+        Name at least one producer that publishes, or concretely intends to
+        publish, deliverables using this value.
+    validations:
+      required: true
+  - type: textarea
+    id: notes
+    attributes:
+      label: Additional notes
+      description: Interactions with existing values, migration notes, or prior art.
+    validations:
+      required: false

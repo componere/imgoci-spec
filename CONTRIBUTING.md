@@ -10,6 +10,15 @@ their own.
 Security vulnerabilities must be reported privately according to
 [`SECURITY.md`](SECURITY.md), not through public issues or pull requests.
 
+Project decision making, review rules, and the public-value registry policy
+are defined in [`GOVERNANCE.md`](GOVERNANCE.md). Participation is covered by
+the [Code of Conduct](CODE_OF_CONDUCT.md).
+
+Licensing is split by artifact: contributions to `spec.md` or an addendum are
+made under the Community Specification License 1.0
+([`LICENSE-COMMUNITY-SPEC`](LICENSE-COMMUNITY-SPEC)); contributions to every
+other artifact are dual licensed Apache-2.0 OR MIT.
+
 ## Reporting a specification defect
 
 Use the specification-defect issue form for contradictory text, ambiguity,
@@ -22,6 +31,13 @@ implementation impact.
 Use the specification-change issue form for new or changed normative behavior.
 Describe the use case, the affected sections, alternatives, and compatibility
 impact before preparing a large change.
+
+## Proposing a public selector value
+
+Use the public-value issue form to propose a new target, representation,
+role, or compression value for the section 5.4 registry. The acceptance
+criteria are in [`GOVERNANCE.md`](GOVERNANCE.md). Private `x-<owner>-<name>`
+values need no proposal.
 
 ## Pull requests
 
