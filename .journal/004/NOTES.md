@@ -15,3 +15,10 @@ The release-index descriptor shape remains unchanged. OCI descriptor `artifactTy
 The standard `application/vnd.imgoci.file.v1` manifest uses the OCI empty config and exactly one `application/octet-stream` layer containing the complete stored file. Every consumer supports this path. BigOCI remains an optional consumer capability and a producer fallback only when the repository or delivery path cannot handle the stored file reliably as one blob; imgoci rejects one-part BigOCI manifests and requires at least two parts.
 
 Because the release-index wire shape does not change, the canonical CUE schema needs only layout-neutral comments and diagnostics. Referenced-manifest validation remains outside the parsed-index schema boundary.
+
+## 2026-08-10 18:05 — Targeted specification change validated
+The implementation branch now defines the standard one-layer manifest as the required baseline, makes BigOCI an optional multipart capability, prohibits one-part BigOCI, and deliberately sets no numeric size threshold because registry and delivery limits vary. The choice is based on stored bytes after imgoci compression.
+
+The standard manifest follows ordinary OCI image-manifest encoding instead of adding JCS or a closed JSON shape. OCI-permitted optional manifest and descriptor members remain valid, preserving interoperability with normal OCI artifact tooling while digest and size still pin the exact bytes. The release index and its conformance fixtures require no wire-format changes.
+
+Validation passed with `mise exec -- moon run root:cue --summary minimal`; this covers CUE formatting, module tidiness, CUE vetting, generated JSON Schema drift, and the fixture matrix. `git diff --check` also passed.
