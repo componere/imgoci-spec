@@ -60,7 +60,6 @@
                     "$ref": "#/$defs/BasicTokenConstraint"
                 },
                 "org.opencontainers.image.title": {
-                    "type": "string",
                     "description": "org.opencontainers.image.title is a safe basename for the decoded content.",
                     "$ref": "#/$defs/TitleConstraint"
                 }
@@ -87,7 +86,7 @@
                 },
                 "artifactType": {
                     "description": "artifactType identifies the referenced file manifest's artifact type.",
-                    "$ref": "#/$defs/FileManifestTypeConstraint"
+                    "$ref": "#/$defs/MediaTypeConstraint"
                 },
                 "digest": {
                     "description": "digest is the SHA-256 digest of the referenced file manifest.",
@@ -95,7 +94,7 @@
                 },
                 "mediaType": {
                     "description": "mediaType identifies the referenced object as an OCI image manifest.",
-                    "const": "application/vnd.oci.image.manifest.v1+json"
+                    "$ref": "#/$defs/ImageManifestMediaTypeConstraint"
                 },
                 "size": {
                     "description": "size is the byte length of the referenced file manifest, not the file content.",
@@ -110,10 +109,10 @@
                 "size"
             ]
         },
-        "FileManifestTypeConstraint": {
+        "ImageManifestMediaTypeConstraint": {
             "type": "string",
-            "description": "#FileManifestTypeConstraint is an RFC 6838 type and subtype using restricted\nnames of no more than 127 ASCII characters each.",
-            "pattern": "^[A-Za-z0-9][A-Za-z0-9!#$&^_.+-]{0,126}/[A-Za-z0-9][A-Za-z0-9!#$&^_.+-]{0,126}$"
+            "description": "#ImageManifestMediaTypeConstraint identifies an OCI image manifest without\nregard to ASCII letter case using a pattern that is portable to JSON Schema.",
+            "pattern": "^[aA][pP][pP][lL][iI][cC][aA][tT][iI][oO][nN]/[vV][nN][dD]\\.[oO][cC][iI]\\.[iI][mM][aA][gG][eE]\\.[mM][aA][nN][iI][fF][eE][sS][tT]\\.[vV]1\\+[jJ][sS][oO][nN]$"
         },
         "IndexAnnotationsShape": {
             "type": "object",
@@ -153,7 +152,6 @@
                     "$ref": "#/$defs/BasicTokenConstraint"
                 },
                 "org.opencontainers.image.version": {
-                    "type": "string",
                     "description": "org.opencontainers.image.version is the producer-assigned release version.\nIt is metadata; imgoci defines neither a tag mapping nor version order.",
                     "$ref": "#/$defs/ReleaseVersionConstraint"
                 }
@@ -176,6 +174,21 @@
                 }
             ]
         },
+        "MediaTypeConstraint": {
+            "type": "string",
+            "description": "#MediaTypeConstraint is an RFC 6838 type and subtype using restricted names\nof no more than 127 ASCII characters each.",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9!#$&^_.+-]{0,126}/[A-Za-z0-9][A-Za-z0-9!#$&^_.+-]{0,126}$"
+        },
+        "ReleaseArtifactTypeConstraint": {
+            "type": "string",
+            "description": "#ReleaseArtifactTypeConstraint identifies an imgoci v1 release without regard\nto ASCII letter case using a pattern that is portable to JSON Schema.",
+            "pattern": "^[aA][pP][pP][lL][iI][cC][aA][tT][iI][oO][nN]/[vV][nN][dD]\\.[iI][mM][gG][oO][cC][iI]\\.[rR][eE][lL][eE][aA][sS][eE]\\.[vV]1$"
+        },
+        "ReleaseIndexMediaTypeConstraint": {
+            "type": "string",
+            "description": "#ReleaseIndexMediaTypeConstraint identifies an OCI image index without regard\nto ASCII letter case using a pattern that is portable to JSON Schema.",
+            "pattern": "^[aA][pP][pP][lL][iI][cC][aA][tT][iI][oO][nN]/[vV][nN][dD]\\.[oO][cC][iI]\\.[iI][mM][aA][gG][eE]\\.[iI][nN][dD][eE][xX]\\.[vV]1\\+[jJ][sS][oO][nN]$"
+        },
         "ReleaseIndexShape": {
             "type": "object",
             "description": "#ReleaseIndexShape defines the closed release-index object and local field\nconstraints used by the JSON Schema projection.",
@@ -187,7 +200,7 @@
                 },
                 "artifactType": {
                     "description": "artifactType identifies the object as an imgoci v1 release index.",
-                    "const": "application/vnd.imgoci.release.v1"
+                    "$ref": "#/$defs/ReleaseArtifactTypeConstraint"
                 },
                 "manifests": {
                     "type": "array",
@@ -199,7 +212,7 @@
                 },
                 "mediaType": {
                     "description": "mediaType identifies the object as an OCI image index.",
-                    "const": "application/vnd.oci.image.index.v1+json"
+                    "$ref": "#/$defs/ReleaseIndexMediaTypeConstraint"
                 },
                 "schemaVersion": {
                     "description": "schemaVersion identifies the OCI image-index schema version and must be 2.",

@@ -23,15 +23,21 @@ bookkeeping that lets implementations map the cases into their own APIs. They
 are not imgoci wire-format members and do not add requirements to the
 specification.
 
+In a resolve case, `acceptedCompressions` lists the compression decoders that
+the consumer supports. The list runs from most preferred to least preferred.
+`supportedManifestTypes` is the consumer's file-manifest capability set.
+Manifest-type comparisons are case-insensitive. Corpus metadata uses lowercase
+media-type spellings.
+
 Cases assert document validity, whole-index rejection, or the selected role,
 compression, file-manifest type, and manifest digest. They do not assert
 implementation error strings.
 
-Repository CI checks the case inventory, metadata schemas, referenced files,
-declared JSON Schema result, canonical CUE validation for applicable parsed
-values, and declared RFC 8785 byte state. It does not execute resolution cases.
-A consumer conformance runner must execute those outcomes through the
-consumer's own API.
+Repository CI runs the focused CUE checks described in
+[`schema/README.md`](../schema/README.md). Those checks use selected cases as
+parsed values. They do not validate the case inventory, case metadata, exact
+fixture bytes, or resolution outcomes. A consumer conformance runner must
+execute those outcomes through the consumer's own API.
 
 `schemaValid` records whether the generated release-index JSON Schema is
 expected to accept the parsed value. It does not record canonical CUE validity.
@@ -54,8 +60,8 @@ The five initial cases cover:
 - one missing required annotation;
 - one duplicate selector tuple;
 - one non-canonical JSON encoding; and
-- file-manifest capability filtering before compression preference during
-  resolution.
+- file-manifest capability filtering before the consumer's supported
+  compression preference during resolution.
 
 They exercise the corpus shape; they do not establish complete producer or
 consumer conformance. In particular, they do not include a producer input

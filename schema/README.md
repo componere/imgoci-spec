@@ -17,31 +17,39 @@ From this directory, run:
 mise exec -- cue vet -c -d '#ReleaseIndex' . path/to/index.json
 ```
 
-`#ReleaseIndex` checks the closed release-index and file-entry descriptor
-shapes, required annotations, descriptor artifact-type syntax, media types,
-local value syntax, and these release-wide rules from Sections 5, 6, and 9:
+`#ReleaseIndex` models the rules that a consumer can apply to a parsed release
+index. It checks the closed release-index and file-entry descriptor shapes,
+required annotations, local syntax, case-insensitive media-type consistency,
+and these release-wide rules from Sections 5, 6, and 9:
 
 - each architecture token has no more than 128 ASCII bytes;
 - decoded content size does not exceed `9223372036854775807`;
 - standard representations contain their required roles;
+- `incus-vm` deliverables use the `incus` target;
 - a transport alternative tuple occurs only once;
 - transport alternatives for one file have the same content digest, content
   size, and title;
 - different roles in one deliverable have different titles;
-- descriptors for one file manifest agree on media type, descriptor size,
-  artifact type, compression, content digest, and content size; and
+- descriptors for one file manifest have media and artifact types that compare
+  equal without regard to letter case. They also agree on descriptor size,
+  compression, content digest, and content size; and
 - file-entry descriptors use the canonical order.
 
 CUE validates a parsed value. It cannot inspect the original JSON bytes, fetch
 referenced objects, or observe repository state. RFC 8785 encoding, agreement
 between a file-entry descriptor's `artifactType` and the fetched manifest's
-top-level `artifactType`, standard file-manifest and BigOCI validation,
-same-repository requirements, retrieval, decoding, and content verification
-remain separate conformance checks. CUE also cannot infer producer intent for
-public and private selector names, enforce the v1 producer choice between the
-two defined file-manifest types, or verify that `io.imgoci.name` stays stable
-across releases. It accepts unknown syntactically valid file-manifest types so
-consumers can preserve them during discovery.
+top-level `artifactType`, file-manifest validation, same-repository
+requirements, retrieval, decoding, and content verification remain separate
+conformance checks.
+
+The schema does not enforce producer-only rules. These include public and
+private selector ownership, the reserved `io.imgoci.` namespace, lowercase
+producer media-type spelling, and whether an extension type has its own rules.
+It also cannot verify that `io.imgoci.name` stays stable across releases.
+
+For consumer compatibility, CUE accepts unknown selector values, unknown
+annotation keys including `io.imgoci.` keys, and syntactically valid unknown
+file-manifest types.
 
 ## Generate the JSON Schema compatibility layer
 
@@ -64,15 +72,15 @@ from regenerated output. Run it from the repository root with
 `mise exec -- moon run root:cue --summary minimal`.
 
 JSON Schema is a best-effort compatibility layer. It does not carry the exact
-architecture-component and string-encoded content-size bounds, reserved
-`io.imgoci.*` annotation-name rule, constraints on other annotation values, or
-release-wide CUE constraints. It also cannot check the external conformance
-requirements listed above. When CUE and JSON Schema validation differ, CUE
-controls.
+architecture-component and string-encoded content-size bounds, constraints on
+unknown annotation values, or release-wide CUE constraints. It also cannot
+check the external conformance requirements listed above. Neither schema
+enforces producer-only registry, namespace, or lowercase spelling rules. When
+CUE and JSON Schema validation differ, CUE controls.
 
-Neither schema enumerates targets, representations, roles, or compression
-values. A consumer validates selector syntax and accepts unknown syntactically
-valid values, as required by Section 5.3.
+Neither schema uses the imgoci public-value registry as an allowlist. Consumer
+validation accepts unknown syntactically valid selector values, file-manifest
+types, and annotation names, as Section 5 requires.
 
 The schemas are released with the specification and conformance corpus. They
 have no independent release version. The `v1` filenames correspond to the

@@ -113,8 +113,33 @@ def write_index(path: Path, value: dict[str, Any]) -> None:
     path.write_text(json.dumps(value, indent=2) + "\n", encoding="utf-8")
 
 
+def incus_vm_index(*, target: str = "incus") -> dict[str, Any]:
+    """Build one Incus VM deliverable with its required disk and metadata roles."""
+
+    value = load_index("valid-minimal")
+    disk = value["manifests"][0]
+    disk_annotations = disk["annotations"]
+    disk_annotations["io.imgoci.target"] = target
+    disk_annotations["io.imgoci.representation"] = "incus-vm"
+    disk_annotations["io.imgoci.role"] = "disk"
+    disk_annotations["org.opencontainers.image.title"] = "disk.qcow2"
+
+    metadata = copy.deepcopy(disk)
+    metadata["digest"] = (
+        "sha256:2222222222222222222222222222222222222222222222222222222222222222"
+    )
+    metadata_annotations = metadata["annotations"]
+    metadata_annotations["io.imgoci.content.digest"] = (
+        "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+    )
+    metadata_annotations["io.imgoci.role"] = "metadata"
+    metadata_annotations["org.opencontainers.image.title"] = "metadata.tar.xz"
+    value["manifests"].append(metadata)
+    return value
+
+
 def invalid_mutations() -> list[tuple[str, dict[str, Any]]]:
-    """Build focused values that each violate one CUE-only rule."""
+    """Build focused values that each violate one release-index rule."""
 
     base = load_index("valid-minimal")
     alternatives = load_index("resolve-compression-order")
@@ -128,6 +153,17 @@ def invalid_mutations() -> list[tuple[str, dict[str, Any]]]:
     value["manifests"][0]["annotations"]["io.imgoci.representation"] = "pxe"
     value["manifests"][0]["annotations"]["io.imgoci.role"] = "kernel"
     mutations.append(("missing-pxe-roles", value))
+
+    value = incus_vm_index()
+    value["manifests"] = value["manifests"][:1]
+    mutations.append(("missing-incus-metadata-role", value))
+
+    value = incus_vm_index()
+    value["manifests"] = value["manifests"][1:]
+    mutations.append(("missing-incus-disk-role", value))
+
+    value = incus_vm_index(target="qemu")
+    mutations.append(("wrong-incus-target", value))
 
     value = copy.deepcopy(alternatives)
     value["manifests"][1]["annotations"]["io.imgoci.content.digest"] = (
@@ -164,16 +200,6 @@ def invalid_mutations() -> list[tuple[str, dict[str, Any]]]:
     mutations.append(("oversized-content", value))
 
     value = copy.deepcopy(base)
-    value["annotations"]["io.imgoci.future"] = "x"
-    mutations.append(("reserved-annotation", value))
-
-    value = copy.deepcopy(base)
-    value["manifests"][0]["annotations"]["io.imgoci.file.manifest-type"] = (
-        "application/vnd.imgoci.file.v1"
-    )
-    mutations.append(("legacy-file-manifest-type-annotation", value))
-
-    value = copy.deepcopy(base)
     del value["manifests"][0]["artifactType"]
     mutations.append(("missing-artifact-type", value))
 
@@ -181,11 +207,23 @@ def invalid_mutations() -> list[tuple[str, dict[str, Any]]]:
     value["manifests"][0]["artifactType"] = "application"
     mutations.append(("malformed-artifact-type", value))
 
+    value = copy.deepcopy(base)
+    value["mediaType"] = "application/json"
+    mutations.append(("wrong-index-media-type", value))
+
+    value = copy.deepcopy(base)
+    value["artifactType"] = "application/vnd.example.release.v1"
+    mutations.append(("wrong-index-artifact-type", value))
+
+    value = copy.deepcopy(base)
+    value["manifests"][0]["mediaType"] = "application/json"
+    mutations.append(("wrong-descriptor-media-type", value))
+
     return mutations
 
 
 def check_fixture_matrix() -> None:
-    """Exercise existing fixtures, CUE-only failures, and exact accepted bounds."""
+    """Exercise existing fixtures, focused failures, and exact accepted bounds."""
 
     accepted = (
         "valid-minimal",
@@ -210,6 +248,13 @@ def check_fixture_matrix() -> None:
     with tempfile.TemporaryDirectory(prefix="imgoci-cue-cases-") as directory:
         temporary = Path(directory)
 
+        incus_vm = incus_vm_index()
+        incus_vm_path = temporary / "accepted-incus-vm.json"
+        write_index(incus_vm_path, incus_vm)
+        result = cue_vet(incus_vm_path)
+        if result.returncode != 0:
+            raise CheckFailure(f"CUE unexpectedly rejected accepted Incus VM:\n{result.stderr}")
+
         bigoci = load_index("valid-minimal")
         bigoci["manifests"][0]["artifactType"] = "application/vnd.bigoci.file.v1"
         bigoci_path = temporary / "accepted-bigoci-file-manifest.json"
@@ -228,6 +273,38 @@ def check_fixture_matrix() -> None:
         if result.returncode != 0:
             raise CheckFailure(
                 f"CUE unexpectedly rejected unknown file manifest type:\n{result.stderr}"
+            )
+
+        unknown_annotations = load_index("valid-minimal")
+        unknown_annotations["annotations"]["io.imgoci.future"] = "x"
+        unknown_annotations["manifests"][0]["annotations"][
+            "io.imgoci.file.manifest-type"
+        ] = "application/vnd.imgoci.file.v1"
+        unknown_annotations_path = temporary / "accepted-unknown-annotations.json"
+        write_index(unknown_annotations_path, unknown_annotations)
+        result = cue_vet(unknown_annotations_path)
+        if result.returncode != 0:
+            raise CheckFailure(
+                f"CUE unexpectedly rejected unknown imgoci annotations:\n{result.stderr}"
+            )
+
+        media_type_case = load_index("valid-minimal")
+        media_type_case["mediaType"] = "Application/Vnd.Oci.Image.Index.V1+Json"
+        media_type_case["artifactType"] = "Application/Vnd.Imgoci.Release.V1"
+        descriptor = media_type_case["manifests"][0]
+        descriptor["mediaType"] = "Application/Vnd.Oci.Image.Manifest.V1+Json"
+        descriptor["artifactType"] = "Application/Vnd.Imgoci.File.V1"
+        shared = copy.deepcopy(descriptor)
+        shared["annotations"]["io.imgoci.architecture"] = "arm64"
+        shared["mediaType"] = "application/vnd.oci.image.manifest.v1+json"
+        shared["artifactType"] = "application/vnd.imgoci.file.v1"
+        media_type_case["manifests"].append(shared)
+        media_type_case_path = temporary / "accepted-media-type-case.json"
+        write_index(media_type_case_path, media_type_case)
+        result = cue_vet(media_type_case_path)
+        if result.returncode != 0:
+            raise CheckFailure(
+                f"CUE unexpectedly rejected case-insensitive media types:\n{result.stderr}"
             )
 
         for case_name, value in invalid_mutations():
