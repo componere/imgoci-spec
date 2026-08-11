@@ -4,6 +4,7 @@
     "cases/invalid-missing-annotation/case.json",
     "cases/invalid-noncanonical-json/case.json",
     "cases/resolve-compression-order/case.json",
+    "cases/resolve-linux-netboot-roles/case.json",
     "cases/valid-minimal/case.json"
   ]
 }

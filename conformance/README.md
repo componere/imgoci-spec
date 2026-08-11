@@ -54,14 +54,15 @@ parsing or reserializing them.
 
 ## Initial scope
 
-The five initial cases cover:
+The six initial cases cover:
 
 - one structurally and canonically valid release index;
 - one missing required annotation;
 - one duplicate selector tuple;
 - one non-canonical JSON encoding; and
 - file-manifest capability filtering before the consumer's supported
-  compression preference during resolution.
+  compression preference during resolution; and
+- default selection of every role in a Linux network-boot deliverable.
 
 They exercise the corpus shape; they do not establish complete producer or
 consumer conformance. In particular, they do not include a producer input

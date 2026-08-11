@@ -68,7 +68,6 @@
         "architecture",
         "target",
         "representation",
-        "roles",
         "acceptedCompressions",
         "supportedManifestTypes"
       ],
@@ -87,6 +86,7 @@
         },
         "roles": {
           "type": "array",
+          "description": "Roles requested by the caller. Omit this member to apply the representation's default role-selection rule.",
           "minItems": 1,
           "uniqueItems": true,
           "items": {

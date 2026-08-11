@@ -50,7 +50,7 @@ Examples do not define new selector values.
 | Transport alternative | One stored encoding of a file. A consumer first filters by supported file-manifest type, then selects by compression. | The `zstd` encoding of a `disk` file. |
 | Architecture | The CPU instruction set required by a deliverable. | `amd64` or `arm64`. |
 | Target | The boot or import environment for which a deliverable was built. | `qemu` or `metal`. |
-| Representation | The form a consumer requests, such as a disk format or a coordinated network-boot set. | `qcow2` or `pxe`. |
+| Representation | The form a consumer requests, such as a disk format or a coordinated network-boot set. | `qcow2` or `linux-netboot`. |
 | Role | The purpose of one file in a deliverable. | `disk`, `kernel`, or `initramfs`. |
 | File manifest | An OCI image manifest that describes one stored file. | A standard imgoci file manifest or a BigOCI file manifest. |
 | Stored file | The bytes referenced by a standard file manifest or assembled from a BigOCI file manifest. These bytes may be compressed. | A zstd stream stored as one OCI blob. |
@@ -426,7 +426,7 @@ architecture, and representation that describes the deliverable.
 | `qcow2` | `disk` | One standalone QCOW2 version 2 or 3 disk image with no backing file or external data file. |
 | `incus-vm` | `disk`, `metadata` | One split Incus virtual-machine image. `disk` is a standalone QCOW2 version 2 or 3 disk image with no backing file or external data file. `metadata` is an XZ-compressed Incus metadata tar archive. |
 | `iso` | `disk` | One optical-disc image that conforms to ECMA-119. |
-| `pxe` | `kernel`, `initramfs`, `rootfs` | One coordinated network-boot set. |
+| `linux-netboot` | `kernel` | One Linux network-boot set. `kernel` is a bootable Linux kernel. Separate initial RAM filesystem and root filesystem files use the optional `initramfs` and `rootfs` roles. |
 
 An `incus-vm` deliverable must use `target=incus`. Its metadata tar archive and
 contents must conform to the Incus Image Format. The archive must contain
@@ -436,6 +436,13 @@ not contain the root disk; the `disk` role carries that file.
 The XZ stream is part of the decoded `metadata` content. An entry that stores
 the XZ stream directly uses `compression=none`. If an entry applies an imgoci
 compression, decoding it must produce the exact XZ stream.
+
+`linux-netboot` identifies Linux boot files, not the mechanism that retrieves
+them. PXE, UEFI HTTP Boot, and other network-boot mechanisms are outside this
+specification. The boot loader, boot-server configuration, deployed file
+locations, and kernel command line are also outside this specification.
+The kernel may contain an embedded initramfs. An initramfs, whether embedded
+or separate, may provide the complete root filesystem.
 
 A producer must assign architecture, target, representation, and role values
 that describe the decoded content and deliverable. When it uses a standard
@@ -449,9 +456,11 @@ specification.
 
 A deliverable using a standard representation must contain every required role
 listed for that representation. It may contain other roles. Those roles do not
-change the representation. A consumer does not need them to consume the
-representation. An addendum that defines another representation must define
-its decoded form and required roles.
+change the representation. Unless the representation definition says
+otherwise, a consumer does not need them to consume the representation. Every
+role in a `linux-netboot` deliverable is part of its coordinated boot set. An
+addendum that defines another representation must define its decoded form and
+required roles.
 
 Representation and compression are separate. A compound source label such as
 `qcow2.xz` does not become an imgoci representation value.
@@ -501,7 +510,8 @@ can be used and are not properties of architecture or representation. OS
 product identity does not belong in a target value.
 
 Representation identifies the form requested by a consumer. It may describe
-one file, such as `qcow2`, or a coordinated file set, such as `pxe`.
+one file, such as `qcow2`, or a coordinated file set, such as
+`linux-netboot`.
 
 Role identifies one file inside a deliverable. Two files in one deliverable
 must use different roles.
@@ -652,9 +662,9 @@ A consumer must:
 
 1. find the deliverable with the exact requested key;
 2. return `deliverable not found` if it does not exist;
-3. when the role list is omitted, select the required roles defined by this
-   specification or a supported addendum. If no such definition is known,
-   select every role;
+3. when the role list is omitted, select every role for `linux-netboot`.
+   Otherwise, select the required roles defined by this specification or a
+   supported addendum. If no such definition is known, select every role;
 4. require every requested role when a role list is present;
 5. return `role not found` without a partial result when a selected role is
    absent;
@@ -878,17 +888,19 @@ The sole layer holds the complete stored xz stream. For a stored file that
 needs multipart storage, the same release-index descriptor shape may instead
 point to a BigOCI manifest with at least two parts.
 
-A coordinated network-boot deliverable uses three entries with one deliverable
-key and three roles:
+A Linux network-boot deliverable may use three entries with one deliverable key
+and three roles:
 
 | Architecture | Target | Representation | Role |
 |---|---|---|---|
-| `amd64` | `metal` | `pxe` | `kernel` |
-| `amd64` | `metal` | `pxe` | `initramfs` |
-| `amd64` | `metal` | `pxe` | `rootfs` |
+| `amd64` | `metal` | `linux-netboot` | `kernel` |
+| `amd64` | `metal` | `linux-netboot` | `initramfs` |
+| `amd64` | `metal` | `linux-netboot` | `rootfs` |
 
-Each row is a separate file entry. Each role may have one or more compression
-alternatives.
+Each row is a separate file entry. The `kernel` role is required. The
+`initramfs` and `rootfs` roles are optional. Each role may have one or more
+compression alternatives. A resolve query that omits the role list selects
+every role present.
 
 ## 14. Normative references
 

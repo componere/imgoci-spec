@@ -59,11 +59,9 @@ import (
 			}
 		}
 
-		if representation == "pxe" {
-			for requiredRole in ["kernel", "initramfs", "rootfs"] {
-				if len([for candidate in manifests if candidate.annotations["io.imgoci.architecture"] == architecture && candidate.annotations["io.imgoci.target"] == target && candidate.annotations["io.imgoci.representation"] == representation && candidate.annotations["io.imgoci.role"] == requiredRole {candidate}]) == 0 {
-					manifests: error("deliverable \(architecture), \(target), pxe must contain the \(requiredRole) role")
-				}
+		if representation == "linux-netboot" {
+			if len([for candidate in manifests if candidate.annotations["io.imgoci.architecture"] == architecture && candidate.annotations["io.imgoci.target"] == target && candidate.annotations["io.imgoci.representation"] == representation && candidate.annotations["io.imgoci.role"] == "kernel" {candidate}]) == 0 {
+				manifests: error("deliverable \(architecture), \(target), linux-netboot must contain the kernel role")
 			}
 		}
 	}
