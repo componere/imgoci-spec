@@ -2,8 +2,9 @@
   "selections": [
     {
       "role": "x-test-file",
-      "compression": "zstd",
-      "digest": "sha256:3333333333333333333333333333333333333333333333333333333333333333"
+      "compression": "none",
+      "manifestType": "application/vnd.imgoci.file.v1",
+      "digest": "sha256:2222222222222222222222222222222222222222222222222222222222222222"
     }
   ]
 }

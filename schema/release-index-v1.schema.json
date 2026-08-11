@@ -43,6 +43,10 @@
                     "description": "io.imgoci.content.size is the byte length of the decoded content, encoded as\na string matching ^(0|[1-9][0-9]*)$.",
                     "$ref": "#/$defs/ContentSizeConstraint"
                 },
+                "io.imgoci.file.manifest-type": {
+                    "description": "io.imgoci.file.manifest-type identifies the file manifest layout.",
+                    "$ref": "#/$defs/FileManifestTypeConstraint"
+                },
                 "io.imgoci.name": {
                     "description": "io.imgoci.name is a stable product identifier when present.",
                     "$ref": "#/$defs/BasicTokenConstraint"
@@ -70,6 +74,7 @@
                 "io.imgoci.compression",
                 "io.imgoci.content.digest",
                 "io.imgoci.content.size",
+                "io.imgoci.file.manifest-type",
                 "io.imgoci.representation",
                 "io.imgoci.role",
                 "io.imgoci.target",
@@ -86,7 +91,7 @@
                     "$ref": "#/$defs/FileEntryAnnotationsShape"
                 },
                 "digest": {
-                    "description": "digest is the SHA-256 digest of the BigOCI manifest.",
+                    "description": "digest is the SHA-256 digest of the referenced file manifest.",
                     "$ref": "#/$defs/SHA256DigestConstraint"
                 },
                 "mediaType": {
@@ -94,7 +99,7 @@
                     "const": "application/vnd.oci.image.manifest.v1+json"
                 },
                 "size": {
-                    "description": "size is the byte length of the BigOCI manifest, not the file content.",
+                    "description": "size is the byte length of the referenced file manifest, not the file content.",
                     "$ref": "#/$defs/ManifestSizeConstraint"
                 }
             },
@@ -104,6 +109,11 @@
                 "mediaType",
                 "size"
             ]
+        },
+        "FileManifestTypeConstraint": {
+            "type": "string",
+            "description": "#FileManifestTypeConstraint is an RFC 6838 type and subtype using restricted\nnames of no more than 127 ASCII characters each.",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9!#$&^_.+-]{0,126}/[A-Za-z0-9][A-Za-z0-9!#$&^_.+-]{0,126}$"
         },
         "IndexAnnotationsShape": {
             "type": "object",
@@ -125,6 +135,10 @@
                 "io.imgoci.content.size": {
                     "description": "io.imgoci.content.size is the byte length of decoded content when present.",
                     "$ref": "#/$defs/ContentSizeConstraint"
+                },
+                "io.imgoci.file.manifest-type": {
+                    "description": "io.imgoci.file.manifest-type identifies the file manifest layout when present.",
+                    "$ref": "#/$defs/FileManifestTypeConstraint"
                 },
                 "io.imgoci.name": {
                     "description": "io.imgoci.name is the stable product identifier shared by all releases of\nthat product.",

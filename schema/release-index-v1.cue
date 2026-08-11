@@ -11,7 +11,7 @@ import (
 // #ReleaseIndex is the canonical machine-readable schema for the value-level
 // rules of an imgoci v1 release index. It validates the complete release index
 // before a consumer selects a deliverable. Rules that require the original JSON
-// bytes, referenced BigOCI manifests, or repository state remain conformance
+// bytes, referenced file manifests, or repository state remain conformance
 // checks.
 #ReleaseIndex: #ReleaseIndexShape & {
 	// schemaVersion identifies the OCI image-index schema version and must be 2.
@@ -111,8 +111,8 @@ import (
 					manifests: error("different roles in deliverable \(rightArchitecture), \(rightTarget), \(rightRepresentation) must have different titles")
 				}
 
-				if left.digest == right.digest && (left.mediaType != right.mediaType || left.size != right.size || leftCompression != rightCompression || left.annotations["io.imgoci.content.digest"] != right.annotations["io.imgoci.content.digest"] || left.annotations["io.imgoci.content.size"] != right.annotations["io.imgoci.content.size"]) {
-					manifests: error("descriptors for BigOCI manifest \(right.digest) must agree on media type, descriptor size, compression, content digest, and content size")
+				if left.digest == right.digest && (left.mediaType != right.mediaType || left.size != right.size || left.annotations["io.imgoci.file.manifest-type"] != right.annotations["io.imgoci.file.manifest-type"] || leftCompression != rightCompression || left.annotations["io.imgoci.content.digest"] != right.annotations["io.imgoci.content.digest"] || left.annotations["io.imgoci.content.size"] != right.annotations["io.imgoci.content.size"]) {
+					manifests: error("descriptors for file manifest \(right.digest) must agree on media type, descriptor size, manifest type, compression, content digest, and content size")
 				}
 
 				let leftOrderKey = "\(leftArchitecture)\u0000\(leftTarget)\u0000\(leftRepresentation)\u0000\(leftRole)\u0000\(leftCompression)"
@@ -152,17 +152,17 @@ import (
 }
 
 // #FileEntryDescriptor is one descriptor in the release index. It points to a
-// BigOCI File Format v1 manifest and adds CUE validation errors for invalid
-// local values.
+// standard imgoci file manifest or a BigOCI File Format v1 manifest and adds
+// CUE validation errors for invalid local values.
 #FileEntryDescriptor: #FileEntryDescriptorShape & {
 	// mediaType identifies the referenced object as an OCI image manifest.
 	mediaType: "application/vnd.oci.image.manifest.v1+json" |
 		error("file-entry descriptor mediaType must be application/vnd.oci.image.manifest.v1+json")
 
-	// digest is the SHA-256 digest of the BigOCI manifest.
+	// digest is the SHA-256 digest of the referenced file manifest.
 	digest: #SHA256Digest
 
-	// size is the byte length of the BigOCI manifest, not the file content.
+	// size is the byte length of the referenced file manifest, not the file content.
 	size: #ManifestSize
 
 	// annotations describes the file entry and its decoded content.
@@ -192,10 +192,10 @@ import (
 	// mediaType identifies the referenced object as an OCI image manifest.
 	mediaType!: "application/vnd.oci.image.manifest.v1+json"
 
-	// digest is the SHA-256 digest of the BigOCI manifest.
+	// digest is the SHA-256 digest of the referenced file manifest.
 	digest!: #SHA256DigestConstraint
 
-	// size is the byte length of the BigOCI manifest, not the file content.
+	// size is the byte length of the referenced file manifest, not the file content.
 	size!: #ManifestSizeConstraint
 
 	// annotations describes the file entry and its decoded content.
@@ -236,6 +236,9 @@ import (
 	// io.imgoci.content.size is the byte length of decoded content when present.
 	"io.imgoci.content.size"?: #ContentSize
 
+	// io.imgoci.file.manifest-type identifies the file manifest layout when present.
+	"io.imgoci.file.manifest-type"?: #FileManifestType
+
 	[(string & !~"^io\\.imgoci\\.")]: string // Other OCI annotations have string values and must not use the reserved io.imgoci namespace.
 }
 
@@ -274,6 +277,9 @@ import (
 	// io.imgoci.content.size is the byte length of decoded content when present.
 	"io.imgoci.content.size"?: #ContentSizeConstraint
 
+	// io.imgoci.file.manifest-type identifies the file manifest layout when present.
+	"io.imgoci.file.manifest-type"?: #FileManifestTypeConstraint
+
 	[(string & !~"^io\\.imgoci\\.")]: string // Other OCI annotations have string values and must not use the reserved io.imgoci namespace.
 }
 
@@ -301,6 +307,9 @@ import (
 	// io.imgoci.content.size is the byte length of the decoded content, encoded as
 	// a string matching ^(0|[1-9][0-9]*)$.
 	"io.imgoci.content.size"!: #ContentSize
+
+	// io.imgoci.file.manifest-type identifies the file manifest layout.
+	"io.imgoci.file.manifest-type"!: #FileManifestType
 
 	// org.opencontainers.image.title is a safe basename for the decoded content.
 	"org.opencontainers.image.title"!: #Title
@@ -336,6 +345,9 @@ import (
 	// io.imgoci.content.size is the byte length of the decoded content, encoded as
 	// a string matching ^(0|[1-9][0-9]*)$.
 	"io.imgoci.content.size"!: #ContentSizeConstraint
+
+	// io.imgoci.file.manifest-type identifies the file manifest layout.
+	"io.imgoci.file.manifest-type"!: #FileManifestTypeConstraint
 
 	// org.opencontainers.image.title is a safe basename for the decoded content.
 	"org.opencontainers.image.title"!: #TitleConstraint
@@ -383,6 +395,15 @@ import (
 #ContentSizeConstraint: string & strings.MinRunes(1) & strings.MaxRunes(19) &
 	=~"^(0|[1-9][0-9]*)$"
 
+// #FileManifestType is an RFC 6838 media type with a custom error for invalid
+// values.
+#FileManifestType: #FileManifestTypeConstraint |
+	error("file manifest type must use RFC 6838 type/subtype restricted-name syntax with no more than 127 characters in each component")
+
+// #FileManifestTypeConstraint is an RFC 6838 type and subtype using restricted
+// names of no more than 127 ASCII characters each.
+#FileManifestTypeConstraint: string & =~"^[A-Za-z0-9][A-Za-z0-9!#$&^_.+-]{0,126}/[A-Za-z0-9][A-Za-z0-9!#$&^_.+-]{0,126}$"
+
 // #Title is a safe basename for decoded content with a custom error for invalid
 // values.
 #Title: #TitleConstraint |
@@ -403,8 +424,8 @@ import (
 #ReleaseVersionConstraint: string & strings.MinRunes(1) & strings.MaxRunes(128) &
 	=~"^[!-~]+$"
 
-// #ManifestSize is the byte length of a BigOCI manifest with a custom error for
-// invalid values.
+// #ManifestSize is the byte length of a referenced file manifest with a custom
+// error for invalid values.
 #ManifestSize: #ManifestSizeConstraint |
 	error("descriptor size must be a JSON integer from 1 through 9007199254740991")
 

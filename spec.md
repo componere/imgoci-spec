@@ -18,7 +18,8 @@ The format lets a consumer:
 - find each file in that deliverable by role;
 - choose among stored encodings of the same file;
 - verify the size and SHA-256 digest of the decoded content; and
-- use one-part or multi-part BigOCI files without changing the release shape.
+- store a file as one OCI blob by default and use BigOCI when multipart storage
+  is needed.
 
 This specification does not define:
 
@@ -45,12 +46,13 @@ Examples do not define new selector values.
 | Deliverable | All file entries with the same architecture, target, and representation. | `amd64`, `qemu`, and `qcow2`. |
 | File entry | One descriptor in the release index. | A descriptor for the `disk` role using `zstd` compression. |
 | File | All transport alternatives with the same deliverable key and role. | The `disk` role across its `none` and `zstd` alternatives. |
-| Transport alternative | One stored encoding of a file. A consumer selects it by compression. | The `zstd` encoding of a `disk` file. |
+| Transport alternative | One stored encoding of a file. A consumer first filters by supported file-manifest type, then selects by compression. | The `zstd` encoding of a `disk` file. |
 | Architecture | The CPU instruction set required by a deliverable. | `amd64` or `arm64`. |
 | Target | The boot or import environment for which a deliverable was built. | `qemu` or `metal`. |
 | Representation | The form a consumer requests, such as a disk format or a coordinated network-boot set. | `qcow2` or `pxe`. |
 | Role | The purpose of one file in a deliverable. | `disk`, `kernel`, or `initramfs`. |
-| Stored file | The bytes assembled from a BigOCI manifest. These bytes may be compressed. | A zstd stream reconstructed from BigOCI parts. |
+| File manifest | An OCI image manifest that describes one stored file. | A standard imgoci file manifest or a BigOCI file manifest. |
+| Stored file | The bytes referenced by a standard file manifest or assembled from a BigOCI file manifest. These bytes may be compressed. | A zstd stream stored as one OCI blob. |
 | Content | The bytes produced after decoding the stored file. | The qcow2 bytes produced by decoding a zstd stored file. |
 | Reference | An OCI tag or digest supplied by the caller. | `registry.example.com/os/example:42.1` or a digest reference. |
 
@@ -78,16 +80,37 @@ artifactType: application/vnd.imgoci.release.v1
         +-- one descriptor for each transport alternative
                     |
                     v
-             BigOCI v1 file manifest
-             one or more ordered parts
+             file manifest
+                    |
+                    +-- standard imgoci v1: one file layer
+                    |
+                    +-- BigOCI v1: two or more ordered parts
 ~~~
 
 A release index must contain only imgoci file entries. It must not mix file
 entries with container images or compatibility descriptors.
 
-Every file entry must point to a manifest that conforms to BigOCI File Format
-v1. BigOCI uses one part for a small file and several parts for a large file.
-imgoci defines no other file-manifest format.
+Every file entry emitted by an imgoci v1 producer must point to either a
+standard imgoci file manifest or a BigOCI File Format v1 manifest. A consumer
+must support the standard format. BigOCI support is optional.
+
+The standard imgoci file manifest is the default. A producer should use it
+when the selected repository and delivery path can store and retrieve the
+stored file as one blob. A producer may use BigOCI when the stored file is too
+large for that path to handle reliably as one blob. An imgoci BigOCI manifest
+must contain at least two parts. A producer must use the standard file manifest
+instead of a one-part BigOCI manifest.
+
+imgoci v1 does not set a numeric threshold for BigOCI. Repository limits and
+delivery conditions vary. The layout decision uses the stored-file size after
+any imgoci compression, not the decoded-content size.
+
+The producer chooses one file-manifest format for each transport alternative.
+The file-entry descriptor declares that format with
+`io.imgoci.file.manifest-type`. The annotation is capability metadata, not a
+selector. It does not change file or deliverable identity and does not permit
+two entries with the same selector tuple. A producer must set it to the exact
+top-level `artifactType` of the referenced manifest.
 
 The release index, file manifests, and blobs must be in the same OCI
 repository.
@@ -97,6 +120,40 @@ A file-entry descriptor must not contain an OCI `platform` object.
 This leaves one source of architecture metadata. This specification does not
 define how a general OCI image client handles the index.
 
+### 3.1 Standard file manifest
+
+A standard imgoci file manifest stores the complete stored file as one OCI
+blob. It must conform to the OCI image manifest and contain these members:
+
+- `schemaVersion` with the number `2`;
+- `mediaType` with `application/vnd.oci.image.manifest.v1+json`;
+- `artifactType` with `application/vnd.imgoci.file.v1`;
+- `config` with the OCI empty descriptor; and
+- `layers` with exactly one file-layer descriptor.
+
+The `config` member must identify the OCI empty descriptor with these required
+members:
+
+~~~json
+{
+  "digest": "sha256:44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+  "mediaType": "application/vnd.oci.empty.v1+json",
+  "size": 2
+}
+~~~
+
+The referenced config blob contains the two bytes `{}`.
+
+The file-layer descriptor's `mediaType` must be `application/octet-stream`.
+Its `digest` must use SHA-256. Its `size` must be a JSON integer from 0 through
+9223372036854775807. The manifest and its config and layer descriptors may use
+other optional members allowed by the OCI Image Format.
+
+The layer references the stored file without a wrapper, split, or transform
+beyond the compression declared by the file entry. Its repository blob URL
+identifies the complete stored file without assembly. When `compression=none`,
+those bytes are also the decoded content.
+
 ## 4. Media types
 
 | Use | Field | Required value |
@@ -104,13 +161,17 @@ define how a general OCI image client handles the index.
 | Release index | `mediaType` | `application/vnd.oci.image.index.v1+json` |
 | Release index | `artifactType` | `application/vnd.imgoci.release.v1` |
 | File-entry descriptor | `mediaType` | `application/vnd.oci.image.manifest.v1+json` |
+| Standard file manifest | `artifactType` | `application/vnd.imgoci.file.v1` |
+| Standard file config | `mediaType` | `application/vnd.oci.empty.v1+json` |
+| Standard file layer | `mediaType` | `application/octet-stream` |
 | BigOCI file manifest | `artifactType` | `application/vnd.bigoci.file.v1` |
 | BigOCI part | `mediaType` | `application/vnd.bigoci.file.part.v1` |
 
-`application/vnd.imgoci.release.v1` is the only type identifier defined by
-imgoci v1. The `.v1` suffix is the schema version. A breaking change requires
-a new type identifier.
+`application/vnd.imgoci.release.v1` and `application/vnd.imgoci.file.v1` are
+the type identifiers defined by imgoci v1. The `.v1` suffix is the schema
+version. A breaking change requires a new type identifier.
 
+Standard file manifests use the shape in section 3.1.
 BigOCI manifests use the media types and encoding defined by BigOCI File Format
 v1. imgoci must not rewrite a BigOCI manifest.
 
@@ -157,11 +218,15 @@ A file-entry descriptor must contain only these members:
 - `annotations`.
 
 The descriptor must not contain `artifactType`, `data`, `platform`, or `urls`.
+The `io.imgoci.file.manifest-type` annotation declares the referenced
+manifest's top-level `artifactType` before the consumer fetches it.
+A producer must set the annotation to the exact value in the referenced
+manifest.
 
 `digest` must be `sha256:` followed by 64 lowercase hexadecimal digits.
 
 `size` must be a JSON integer from 1 through 9007199254740991. It is the byte
-length of the BigOCI manifest, not the file content.
+length of the referenced file manifest, not the file content.
 
 Every file-entry descriptor must contain these annotations:
 
@@ -174,6 +239,7 @@ Every file-entry descriptor must contain these annotations:
 | `io.imgoci.compression` | Decoder applied to the stored file. |
 | `io.imgoci.content.digest` | SHA-256 digest of the decoded content. |
 | `io.imgoci.content.size` | Byte length of the decoded content. |
+| `io.imgoci.file.manifest-type` | Top-level `artifactType` of the referenced file manifest. |
 | `org.opencontainers.image.title` | Safe basename for the decoded content. |
 
 A missing or invalid required annotation makes the whole release index
@@ -211,6 +277,12 @@ hexadecimal digits.
 `io.imgoci.content.size` must be a string matching
 `^(0|[1-9][0-9]*)$`. Its value must not exceed 9223372036854775807.
 
+`io.imgoci.file.manifest-type` must contain a media type that conforms to RFC
+6838. An imgoci v1 producer must use `application/vnd.imgoci.file.v1` or
+`application/vnd.bigoci.file.v1`. A consumer must preserve any other
+syntactically valid value during discovery and treat it as unsupported during
+resolution unless a supported addendum defines it.
+
 Public selector values are append-only, and their meanings must not change.
 They are defined only in this specification or a later imgoci addendum. When a
 public value matches the producer's intended meaning, the producer must use it.
@@ -229,7 +301,8 @@ when it omits that field. A producer must not assign special wildcard meaning
 to `any`, `*`, or another token.
 
 To classify one file for more than one architecture or target, a producer emits
-one descriptor for each value. Those descriptors may share one BigOCI digest.
+one descriptor for each value. Those descriptors may share one file-manifest
+digest.
 
 A title must match:
 
@@ -367,6 +440,11 @@ content. It must not select a different logical file.
 A consumer must validate the complete release index before it selects a
 deliverable.
 
+Release-index validation checks `io.imgoci.file.manifest-type` syntax and
+cross-entry consistency without fetching referenced manifests. The consumer
+checks the declared type against each selected manifest during retrieval as
+required by section 8.
+
 The release index is invalid if any of these conditions is true:
 
 1. The root object does not satisfy section 5.1.
@@ -379,13 +457,13 @@ The release index is invalid if any of these conditions is true:
 6. Transport alternatives for one file have different content digests,
    content sizes, or titles.
 7. Two different roles in one deliverable have the same title.
-8. Two descriptors with the same BigOCI manifest digest disagree on
-   descriptor media type, descriptor size, compression, content digest,
-   or content size.
+8. Two descriptors with the same file-manifest digest disagree on
+   descriptor media type, descriptor size, file-manifest type, compression,
+   content digest, or content size.
 9. The descriptor array is not in the canonical order defined in section 9.
 10. The index bytes are not in the canonical form defined in section 9.
 
-Descriptors that share a BigOCI manifest digest may differ in architecture,
+Descriptors that share a file-manifest digest may differ in architecture,
 target, representation, role, and title. This allows one stored file to be
 classified for more than one deliverable without copying it.
 
@@ -396,6 +474,13 @@ ignore an invalid entry and continue with the remaining entries.
 
 Discovery and resolution are separate operations. A broad query returns
 matches. It does not choose one.
+
+A consumer's supported file-manifest types are a capability set. The set must
+contain `application/vnd.imgoci.file.v1`. It contains
+`application/vnd.bigoci.file.v1` only when the consumer supports BigOCI. A
+supported addendum may add other values to the set. A consumer can compare
+this set with `io.imgoci.file.manifest-type` without fetching the referenced
+manifests.
 
 ### 7.1 Fetch the release
 
@@ -436,10 +521,14 @@ field matches every value.
 A deliverable matches a role filter only if it contains every requested role.
 
 The result must include every matching deliverable, its roles, and the
-available compression values for each role. Deliverables must be sorted by
-their keys. Roles within a deliverable must be sorted by role. Compression
-values within a role must be sorted by compression. Each comparison uses
-ascending UTF-8 byte order.
+available transport alternatives for each role. Each alternative includes its
+compression and file-manifest type. Deliverables must be sorted by their keys.
+Roles within a deliverable must be sorted by role. Alternatives within a role
+must be sorted by compression. Each comparison uses ascending UTF-8 byte order.
+
+Listing must not remove alternatives because the consumer does not support
+their file-manifest type. It exposes those types so the caller can filter or
+report them without fetching the file manifests.
 
 An empty list is a valid result.
 
@@ -460,15 +549,28 @@ A consumer must:
    specification or a supported addendum. If no such definition is known,
    select every role;
 4. require every requested role when a role list is present;
-5. return `role not found` without a partial result when a requested role is
+5. return `role not found` without a partial result when a selected role is
    absent;
 6. inspect the transport alternatives for each selected role;
-7. choose the first accepted compression that exists for that role; and
-8. return `compression not available` without a partial result when a role
-   has no accepted alternative.
+7. remove alternatives whose `io.imgoci.file.manifest-type` is not in the
+   consumer's supported file-manifest types;
+8. return `file manifest type not supported` without a partial result when a
+   selected role has no remaining alternative;
+9. choose the first accepted compression that exists among the remaining
+   alternatives for that role; and
+10. return `compression not available` without a partial result when a role
+    has no accepted alternative.
+
+For steps 6 through 10, the consumer must complete each step for every selected
+role before starting the next step. Any failure returns no roles.
 
 An accepted-compression list with one item is an exact compression request. A
 consumer may select different compressions for different roles.
+
+For example, a standard-only consumer removes a BigOCI `zstd` alternative
+before compression selection. If the next accepted compression uses the
+standard manifest type, the consumer selects it. This is selection, not
+post-retrieval fallback.
 
 The producer does not mark one compression as preferred. Every transport
 alternative for a file has the same content digest, size, and title.
@@ -481,34 +583,55 @@ understand.
 
 ## 8. Retrieval and verification
 
-A consumer must fetch each selected BigOCI manifest by digest.
+A consumer must fetch each selected file manifest by digest. It must verify the
+fetched manifest's SHA-256 digest against the file-entry descriptor digest and
+its byte length against the descriptor size.
 
-For each selected file, the consumer must:
+The consumer must require the manifest's top-level `artifactType` to equal the
+descriptor's `io.imgoci.file.manifest-type`. A mismatch is invalid producer
+output and fails the complete resolved result.
 
-1. verify the fetched manifest's SHA-256 digest against the descriptor digest
-   and the fetched manifest's byte length against the descriptor size;
-2. validate the manifest against BigOCI File Format v1;
-3. fetch the parts in any order and verify each part's digest and size;
-4. assemble the parts in manifest order;
-5. verify the digest and size of the assembled stored file as required by
-   BigOCI;
-6. apply the declared compression decoder to the complete stored file;
-7. count and hash decoded bytes while writing them;
-8. stop if decoded output exceeds `io.imgoci.content.size`; and
-9. require the final decoded size and SHA-256 digest to match the corresponding
+The consumer must then inspect the manifest's `artifactType` and recover the
+stored file as follows:
+
+1. For `application/vnd.imgoci.file.v1`, validate the manifest against section
+   3.1, fetch its file layer, and verify the layer digest and size. The layer
+   bytes are the stored file.
+2. For `application/vnd.bigoci.file.v1`, validate the manifest against BigOCI
+   File Format v1 and require at least two parts. Fetch the parts in any order,
+   verify each part's digest and size, assemble them in manifest order, and
+   verify the assembled digest and size as required by BigOCI. The assembled
+   bytes are the stored file.
+3. For another syntactically valid value, use the rules from a supported
+   addendum or return `file manifest type not supported`. Reject a missing or
+   syntactically invalid `artifactType`.
+
+After recovering the complete stored file, the consumer must:
+
+1. apply the declared compression decoder;
+2. count and hash decoded bytes while writing them;
+3. stop if decoded output exceeds `io.imgoci.content.size`; and
+4. require the final decoded size and SHA-256 digest to match the corresponding
    file-entry annotations.
 
-When `compression=none`, the BigOCI whole-file digest and size must equal the
-corresponding imgoci content digest and size.
+When `compression=none`, the standard file-layer digest and size or the BigOCI
+whole-file digest and size must equal the corresponding imgoci content digest
+and size.
 
-The file-entry title names the decoded output. The BigOCI title is
-informational only and has no imgoci meaning.
+The file-entry title names the decoded output. A BigOCI title is informational
+only and has no imgoci meaning.
 
 A consumer must not treat a file as verified before it passes every required
-check. A decoding or integrity failure is not a selection failure. This
-specification does not define a retry or fallback policy.
+check. A manifest-type mismatch, decoding failure, or integrity failure is not
+a selection failure. It fails the complete resolved result. The consumer must
+not select another transport alternative in response. This specification does
+not define network retries.
 
 ## 9. Deterministic encoding
+
+Standard imgoci file manifests use the JSON encoding rules of the OCI Image
+Format. imgoci adds no canonical encoding. The file-entry descriptor pins the
+exact manifest bytes by digest and size.
 
 BigOCI file manifests use the canonical encoding defined by BigOCI File Format
 v1. imgoci must not add fields to them or re-encode them.
@@ -533,8 +656,9 @@ descriptor order or JSON encoding is not canonical.
 
 The same release-index fields, descriptors, and annotations produce the same
 index bytes and digest. Equal decoded content can still produce different OCI
-graphs. The resulting digests also depend on BigOCI part size, BigOCI title,
-compressed bytes, descriptor metadata, and other annotations.
+graphs. The resulting digests also depend on the file-manifest format,
+compressed bytes, descriptor metadata, and other annotations. BigOCI manifests
+also depend on part size and BigOCI title.
 
 ## 10. References and tags
 
@@ -550,8 +674,8 @@ are outside this specification.
 
 ## 11. External OCI artifacts
 
-Release indexes and BigOCI file manifests are content-addressed OCI objects.
-Another OCI artifact may name either digest as its subject.
+Release indexes and file manifests are content-addressed OCI objects. Another
+OCI artifact may name either digest as its subject.
 
 imgoci does not define that artifact's format, discovery, verification, copy
 behavior, or trust policy. External artifacts do not change the meaning of an
@@ -565,12 +689,12 @@ conforming consumer must reject objects that do not satisfy it.
 Non-normative conformance artifacts may include a JSON Schema, positive
 fixtures, and negative fixtures. A JSON Schema can check structure and field
 syntax. Fixtures can cover cross-entry rules, canonical bytes, selection,
-BigOCI validation, and decoded-content verification.
+file-manifest validation, and decoded-content verification.
 
 ## 13. Non-normative examples
 
-This example is pretty-printed for reading. Its digests are placeholders with
-valid syntax. A producer sends the compact RFC 8785 form.
+The release-index example is pretty-printed for reading. Its digests are
+placeholders with valid syntax. A producer sends the compact RFC 8785 form.
 
 ~~~json
 {
@@ -586,6 +710,7 @@ valid syntax. A producer sends the compact RFC 8785 form.
         "io.imgoci.compression": "xz",
         "io.imgoci.content.digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
         "io.imgoci.content.size": "8589934592",
+        "io.imgoci.file.manifest-type": "application/vnd.imgoci.file.v1",
         "io.imgoci.representation": "qcow2",
         "io.imgoci.role": "disk",
         "io.imgoci.target": "qemu",
@@ -601,8 +726,31 @@ valid syntax. A producer sends the compact RFC 8785 form.
 }
 ~~~
 
-The descriptor may point to a one-part or multi-part BigOCI manifest. The
-release-index shape is the same.
+The file entry above points to a standard file manifest such as:
+
+~~~json
+{
+  "artifactType": "application/vnd.imgoci.file.v1",
+  "config": {
+    "digest": "sha256:44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+    "mediaType": "application/vnd.oci.empty.v1+json",
+    "size": 2
+  },
+  "layers": [
+    {
+      "digest": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "mediaType": "application/octet-stream",
+      "size": 123456789
+    }
+  ],
+  "mediaType": "application/vnd.oci.image.manifest.v1+json",
+  "schemaVersion": 2
+}
+~~~
+
+The sole layer holds the complete stored xz stream. For a stored file that
+needs multipart storage, the same release-index descriptor shape may instead
+point to a BigOCI manifest with at least two parts.
 
 A coordinated network-boot deliverable uses three entries with one deliverable
 key and three roles:
@@ -619,8 +767,10 @@ alternatives.
 ## 14. Normative references
 
 - [OCI Image Format, image index](https://github.com/opencontainers/image-spec/blob/v1.1.1/image-index.md)
+- [OCI Image Format, image manifest](https://github.com/opencontainers/image-spec/blob/v1.1.1/manifest.md)
 - [OCI Image Format, descriptor](https://github.com/opencontainers/image-spec/blob/v1.1.1/descriptor.md)
 - [OCI Distribution Specification v1.1.1](https://github.com/opencontainers/distribution-spec/blob/v1.1.1/spec.md)
+- [RFC 6838: Media Type Specifications and Registration Procedures](https://www.rfc-editor.org/rfc/rfc6838.html)
 - [BigOCI File Format v1](https://github.com/componere/bigoci/blob/v0.1.0/docs/docs/reference/format.md)
 - [RFC 1952: GZIP file format](https://www.rfc-editor.org/rfc/rfc1952.html)
 - [XZ file format](https://tukaani.org/xz/xz-file-format.txt)

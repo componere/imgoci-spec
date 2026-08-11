@@ -13,6 +13,14 @@ This section records work completed before automated releases were enabled.
 - Defined the Incus target and coordinated metadata-plus-QCOW2 virtual-machine
   representation.
 
+### Changed
+
+- Made a standard single-layer OCI file manifest the default storage format and
+  reserved multipart BigOCI manifests for files that cannot be handled reliably
+  as one blob.
+- Advertised each file manifest's type in its release-index descriptor so a
+  consumer can remove unsupported formats before choosing a compression.
+
 ### Documentation
 
 - Clarified the draft specification language without changing normative intent.

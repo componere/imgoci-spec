@@ -24,8 +24,8 @@ are not imgoci wire-format members and do not add requirements to the
 specification.
 
 Cases assert document validity, whole-index rejection, or the selected role,
-compression, and manifest digest. They do not assert implementation error
-strings.
+compression, file-manifest type, and manifest digest. They do not assert
+implementation error strings.
 
 Repository CI checks the case inventory, metadata schemas, referenced files,
 declared JSON Schema result, canonical CUE validation for applicable parsed
@@ -54,12 +54,15 @@ The five initial cases cover:
 - one missing required annotation;
 - one duplicate selector tuple;
 - one non-canonical JSON encoding; and
-- accepted-compression preference during resolution.
+- file-manifest capability filtering before compression preference during
+  resolution.
 
 They exercise the corpus shape; they do not establish complete producer or
 consumer conformance. In particular, they do not include a producer input
-model, referenced BigOCI manifests, file parts, decoding, or retrieval graphs.
-Those should be added only when they can be derived from specification text and
-represented without defining a new implementation API.
+model, referenced file manifests, agreement between file-manifest-type
+annotations and referenced `artifactType` values, standard file layers, BigOCI
+parts, decoding, or retrieval graphs. Those should be added only when they can
+be derived from specification text and represented without defining a new
+implementation API.
 
 The corpus is released with the specification and has no independent version.
