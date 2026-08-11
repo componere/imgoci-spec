@@ -17,3 +17,6 @@ Updated CUE and its focused checks for Incus VM roles and target, unknown annota
 The locked `moon ci` task passed. A separate read-only check validated the case inventory, case metadata, RFC 8785 byte state, declared JSON Schema outcomes, mixed-case media types, and the 427-byte example manifest. The pinned XZ URL returned HTTP 200. Three independent review passes found no remaining contradiction after the final annotation and digest wording fixes.
 
 Next: Commit the reviewed files, push the branch, open the pull request, and record its URL.
+
+## 2026-08-10 22:07 — Pull request opened
+Committed the completed patch as `34491f8` with subject `fix(spec): resolve public review findings`. Pushed `feat/spec-review-fixes` and opened [PR #10](https://github.com/componere/imgoci-spec/pull/10). The hosted `Validate` workflow completed successfully at the exact PR head. The session remains open for review and merge follow-up.
