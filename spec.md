@@ -126,8 +126,11 @@ For imgoci file entries, this rule controls where the OCI texts differ. Both
 file-manifest formats defined by imgoci v1 require a top-level `artifactType`,
 so the config fallback does not apply.
 
-The release index, file manifests, and blobs must be in the same OCI
-repository.
+A producer must publish the release index and every manifest and blob reachable
+from it in the same OCI repository. A consumer must use that repository for the
+fetches required by sections 7 and 8. Ordinary resolution and retrieval do not
+require the consumer to fetch unselected entries or traverse the complete
+referenced object graph.
 
 An imgoci consumer must not reject a supported OCI object or descriptor because
 its `annotations` map contains an unknown key. Unknown annotation keys have no
@@ -592,10 +595,17 @@ A consumer must fetch the release index with an OCI Distribution manifest
 Accept: application/vnd.oci.image.index.v1+json
 ~~~
 
-For every manifest fetch in sections 7.1 and 8, the manifest bytes are the
-response content after decoding every HTTP `Content-Encoding` and before
-parsing JSON. A consumer must use these bytes without re-encoding them for
-every digest and byte-length calculation.
+Every manifest and blob `GET` request in sections 7.1 and 8 must contain:
+
+~~~text
+Accept-Encoding: identity
+~~~
+
+A consumer must reject a response to one of these requests if it contains a
+`Content-Encoding` field. For every manifest fetch in sections 7.1 and 8, the
+manifest bytes are the response content before parsing JSON. A consumer must
+use these bytes without re-encoding them for every digest and byte-length
+calculation.
 
 A consumer must:
 
@@ -730,8 +740,9 @@ stored file as follows:
 2. For `application/vnd.bigoci.file.v1`, validate the manifest against BigOCI
    File Format v1 and require at least two parts. Fetch the parts in any order,
    verify each part's digest and size, assemble them in manifest order, and
-   verify the assembled digest and size as required by BigOCI. The assembled
-   bytes are the stored file.
+   verify the SHA-256 digest and byte length of the assembled bytes against the
+   manifest's `io.bigoci.file.digest` and `io.bigoci.file.size` annotations. The
+   assembled bytes are the stored file.
 3. For another syntactically valid value, use the rules for that format when the
    consumer supports it. Otherwise, return `file manifest type not supported`.
    Reject a missing or syntactically invalid `artifactType`.
