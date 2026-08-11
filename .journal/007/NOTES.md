@@ -25,3 +25,11 @@ The implementation preserves the prior decisions about descriptor `artifactType`
 Committed the clean implementation as `2daf7c4` (`fix(spec): align consumer interoperability rules`) and pushed `feat/public-review-followups`. Opened ready PR #11: https://github.com/componere/imgoci-spec/pull/11.
 
 GitHub validated the exact PR head in Actions run `31503212034`; the `validate` job passed. The implementation worktree is clean. Session 007 remains in progress while the PR is open for review.
+
+## 2026-08-11 07:58 — Close
+
+The user reviewed and approved PR #11. Squash-merged exact head `2daf7c4` as `e90db17`, fast-forwarded local `master`, and removed the integrated Worktrunk worktree plus local and remote feature branches.
+
+Post-merge Validate run `31504345762` and Release Please run `31504345376` passed. Release PR #3 was refreshed to `7161920` and remains open, mergeable, and green as a separate release decision.
+
+Finalized `SUMMARY.md`, marked session 007 complete in `INDEX.md`, and updated `TECH_NOTES.md` with the durable consumer, filename, retrieval, and payload-validation boundaries.

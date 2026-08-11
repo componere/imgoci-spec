@@ -8,4 +8,4 @@
 | 004 | 2026-08-10 | Standard OCI file layout and BigOCI precedence | complete | Made single-layer OCI files the required default, exposed manifest type for pre-fetch capability filtering, and retained BigOCI as an optional multipart fallback. |
 | 005 | 2026-08-10 | OCI-native file manifest type descriptors | complete | Replaced the private manifest-type annotation with required OCI descriptor `artifactType` and merged the fully validated change in PR #9. |
 | 006 | 2026-08-10 | Public review corrections | complete | Resolved the public review findings, aligned consumer and producer rules, fixed the schema and canonical fixtures, and merged validated PR #10. |
-| 007 | 2026-08-11 | Public review interoperability fixes | in-progress | Apply the agreed specification, schema, retrieval, and filename fixes and open a validated pull request. |
+| 007 | 2026-08-11 | Public review interoperability fixes | complete | Aligned tolerant consumer parsing, annotation and filename semantics, OCI Distribution retrieval, and payload-validation boundaries in merged PR #11. |
