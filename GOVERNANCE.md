@@ -14,6 +14,18 @@ scope is the imgoci release format: the specification in
 [`spec.md`](spec.md), its addenda, and its language-neutral validation
 artifacts.
 
+## Effective date
+
+The licensing terms in this document apply immediately on merge, including
+the Community Specification License terms for specification contributions.
+
+The process rules take effect at the project's first publication: the first
+tag created by the release process in [`RELEASES.md`](RELEASES.md). Until
+that publication, the maintainer may change any repository content, including
+the specification and this document, through ordinary pull requests without
+the review windows and registry procedure below. Changes merged during this
+bootstrap period are recorded in history like any other change.
+
 ## Licensing
 
 | Artifact | License |
