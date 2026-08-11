@@ -45,6 +45,9 @@ This section records work completed before automated releases were enabled.
   and made tag pinning conditional on a tag reference.
 - Placed representation-internal content validation outside imgoci validation
   and retrieval.
+- Replaced the fixed three-file PXE representation with a Linux network-boot
+  representation that requires a kernel and selects every present role by
+  default.
 
 ### Documentation
 

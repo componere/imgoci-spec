@@ -184,9 +184,9 @@ def invalid_mutations() -> list[tuple[str, dict[str, Any]]]:
     mutations.append(("missing-disk-role", value))
 
     value = copy.deepcopy(base)
-    value["manifests"][0]["annotations"]["io.imgoci.representation"] = "pxe"
-    value["manifests"][0]["annotations"]["io.imgoci.role"] = "kernel"
-    mutations.append(("missing-pxe-roles", value))
+    value["manifests"][0]["annotations"]["io.imgoci.representation"] = "linux-netboot"
+    value["manifests"][0]["annotations"]["io.imgoci.role"] = "initramfs"
+    mutations.append(("missing-linux-netboot-kernel", value))
 
     value = incus_vm_index()
     value["manifests"] = value["manifests"][:1]
@@ -272,6 +272,7 @@ def check_fixture_matrix() -> None:
     accepted = (
         "valid-minimal",
         "resolve-compression-order",
+        "resolve-linux-netboot-roles",
         "invalid-noncanonical-json",
     )
     rejected = (
@@ -298,6 +299,19 @@ def check_fixture_matrix() -> None:
         result = cue_vet(incus_vm_path)
         if result.returncode != 0:
             raise CheckFailure(f"CUE unexpectedly rejected accepted Incus VM:\n{result.stderr}")
+
+        linux_netboot = load_index("valid-minimal")
+        linux_netboot_annotations = linux_netboot["manifests"][0]["annotations"]
+        linux_netboot_annotations["io.imgoci.representation"] = "linux-netboot"
+        linux_netboot_annotations["io.imgoci.role"] = "kernel"
+        linux_netboot_path = temporary / "accepted-linux-netboot-kernel-only.json"
+        write_index(linux_netboot_path, linux_netboot)
+        result = cue_vet(linux_netboot_path)
+        if result.returncode != 0:
+            raise CheckFailure(
+                "CUE unexpectedly rejected kernel-only Linux netboot:\n"
+                f"{result.stderr}"
+            )
 
         bigoci = load_index("valid-minimal")
         bigoci["manifests"][0]["artifactType"] = "application/vnd.bigoci.file.v1"
