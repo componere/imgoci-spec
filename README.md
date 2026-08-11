@@ -28,8 +28,9 @@ repository revision; it does not transfer authority to another artifact.
   canonical machine-readable constraints for a parsed release index.
 - [`schema/release-index-v1.schema.json`](schema/release-index-v1.schema.json)
   provides generated compatibility for JSON Schema consumers.
-- [`conformance/v1/cases.json`](conformance/v1/cases.json) inventories the
-  initial language-neutral conformance cases.
+- [`conformance/v1/pass`](conformance/v1/pass) and
+  [`conformance/v1/fail`](conformance/v1/fail) contain complete release indexes
+  that CUE must accept or reject.
 - [`RELEASES.md`](RELEASES.md) describes publication mechanics.
 - [`CHANGELOG.md`](CHANGELOG.md) records changes to published artifacts.
 
@@ -54,9 +55,9 @@ mise install
 mise exec -- moon run root:cue --summary minimal
 ```
 
-Moon checks CUE formatting and module state, validates the schema and focused
-fixtures, and verifies that the generated JSON Schema is current. CI installs
-the same locked tools and runs the same Moon task.
+Moon checks CUE formatting and module state, validates every passing and failing
+fixture, and verifies that the generated JSON Schema is current. CI installs the
+same locked tools and runs the same Moon task.
 
 ## Implementation
 

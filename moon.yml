@@ -15,7 +15,7 @@ workspace:
 
 tasks:
   cue:
-    command: 'uv run --script --locked scripts/check_cue.py'
+    command: 'sh scripts/check_cue.sh'
     inputs: []
     options:
       cache: false
