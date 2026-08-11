@@ -48,6 +48,9 @@ This section records work completed before automated releases were enabled.
 - Replaced the fixed three-file PXE representation with a Linux network-boot
   representation that requires a kernel and selects every present role by
   default.
+- Required `Accept-Encoding: identity` for manifest and blob retrieval, assigned
+  same-repository publication to producers, and clarified imgoci's whole-file
+  verification of BigOCI assemblies.
 
 ### Documentation
 
