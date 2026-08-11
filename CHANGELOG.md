@@ -51,6 +51,10 @@ This section records work completed before automated releases were enabled.
 - Required `Accept-Encoding: identity` for manifest and blob retrieval, assigned
   same-repository publication to producers, and clarified imgoci's whole-file
   verification of BigOCI assemblies.
+- Required tagged release indexes to remain retrievable by their SHA-256 digest
+  and allowed a response to state `Content-Encoding: identity` explicitly.
+- Made a present role list select exactly those roles and expressed selection
+  failures in language-neutral terms.
 - Replaced generated Python validation cases and unused case metadata with
   explicit passing and failing release-index fixtures and a small shell harness.
 
@@ -61,3 +65,5 @@ This section records work completed before automated releases were enabled.
 - Removed an outdated claim about the checks run against the conformance corpus.
 - Clarified the draft specification language without changing normative intent.
 - Made the public target registry self-contained.
+- Updated the BigOCI reference to its canonical repository and clarified that
+  the canonical Go implementation is not yet public.
