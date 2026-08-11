@@ -20,3 +20,8 @@ Next: Commit the reviewed files, push the branch, open the pull request, and rec
 
 ## 2026-08-10 22:07 — Pull request opened
 Committed the completed patch as `34491f8` with subject `fix(spec): resolve public review findings`. Pushed `feat/spec-review-fixes` and opened [PR #10](https://github.com/componere/imgoci-spec/pull/10). The hosted `Validate` workflow completed successfully at the exact PR head. The session remains open for review and merge follow-up.
+
+## 2026-08-10 22:18 — Close
+PR #10 was squash-merged as `cf2c181`. Local `master` matches `origin/master`. The feature worktree and local and remote feature branches were removed. Post-merge Validate and Release Please workflows passed.
+
+Recorded the final decisions in the session summary and technical notes. The remaining follow-up is to repeat the real Incus 7.0 import and launch proof before the first release. Release PR #3 remains open.
