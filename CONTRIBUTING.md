@@ -44,12 +44,13 @@ Before requesting review:
 2. Run `mise trust --all`, then install the locked toolchain with
    `mise install`.
 3. Run `mise exec -- moon run root:cue --summary minimal` from the repository
-   root. This checks CUE formatting and module state, validates the schema and
-   focused fixtures, and detects generated-schema drift.
+   root. This checks CUE formatting and module state, validates every passing
+   and failing fixture, and detects generated-schema drift.
 4. When intentionally changing the CUE projection, regenerate
    `release-index-v1.schema.json` as described in
    [`schema/README.md`](schema/README.md).
-5. Preserve exact bytes in cases that test canonical encoding.
+5. Add a complete release index under `conformance/v1/pass` or
+   `conformance/v1/fail` when changing parsed-value validation behavior.
 6. Update [`CHANGELOG.md`](CHANGELOG.md) when the change will affect a
    publication.
 7. Ensure the CUE validation workflow passes.

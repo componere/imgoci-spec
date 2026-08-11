@@ -1,75 +1,33 @@
-# Conformance cases
+# CUE validation fixtures
 
-This directory contains official, informative cases derived from
-[`spec.md`](../spec.md). The specification is normative and controls if a case,
-the canonical CUE schema, or case metadata disagrees with the text.
+This directory contains complete release indexes derived from
+[`spec.md`](../spec.md). The specification remains normative, and the canonical
+CUE schema controls machine-readable validation.
 
-`v1/cases.json` is the complete inventory for the initial corpus. Each listed
-directory contains:
+The expected result is expressed by directory membership:
 
-- `case.json`: language-neutral case metadata;
-- `index.json`: the exact release-index input bytes; and
-- `expected.json`: a minimal expected observation, when the operation returns
-  a selection.
+- `v1/pass/*.json` must be accepted by `#ReleaseIndex`;
+- `v1/fail/*.json` must be rejected by `#ReleaseIndex`.
 
-`case.schema.json` validates case metadata only. It is not a schema for an
-imgoci object.
+Each filename describes the behavior it covers. There is no inventory or case
+metadata to keep synchronized.
 
-## Harness boundary
+Run every fixture from the repository root with:
 
-The draft does not define serialized validator, query, or result APIs. Fields
-such as `operation`, `input`, `expected`, and `selections` are corpus
-bookkeeping that lets implementations map the cases into their own APIs. They
-are not imgoci wire-format members and do not add requirements to the
-specification.
+```sh
+mise exec -- sh conformance/check.sh
+```
 
-In a resolve case, `acceptedCompressions` lists the compression decoders that
-the consumer supports. The list runs from most preferred to least preferred.
-`supportedManifestTypes` is the consumer's file-manifest capability set.
-Manifest-type comparisons are case-insensitive. Corpus metadata uses lowercase
-media-type spellings.
+## Boundary
 
-Cases assert document validity, whole-index rejection, or the selected role,
-compression, file-manifest type, and manifest digest. They do not assert
-implementation error strings.
+Pass and fail mean acceptance or rejection of a parsed release-index value.
+CUE cannot inspect the original JSON bytes, fetch referenced objects, perform
+selection or retrieval, decode file content, or observe repository state.
+Those remain separate consumer and producer conformance concerns defined by
+the specification.
 
-Repository CI runs the focused CUE checks described in
-[`schema/README.md`](../schema/README.md). Those checks use selected cases as
-parsed values. They do not validate the case inventory, case metadata, exact
-fixture bytes, or resolution outcomes. A consumer conformance runner must
-execute those outcomes through the consumer's own API.
-
-`schemaValid` records whether the generated release-index JSON Schema is
-expected to accept the parsed value. It does not record canonical CUE validity.
-`canonicalJson` records whether the original bytes are expected to equal their
-RFC 8785 encoding. These observations are separate because JSON Schema cannot
-test cross-entry relationships or original byte encoding.
-
-## Exact bytes
-
-Canonical `index.json` fixtures end immediately after the final `}` with no
-trailing newline. The non-canonical fixture deliberately preserves readable
-whitespace and a final newline. Tools must inspect the original bytes before
-parsing or reserializing them.
-
-## Initial scope
-
-The six initial cases cover:
-
-- one structurally and canonically valid release index;
-- one missing required annotation;
-- one duplicate selector tuple;
-- one non-canonical JSON encoding; and
-- file-manifest capability filtering before the consumer's supported
-  compression preference during resolution; and
-- default selection of every role in a Linux network-boot deliverable.
-
-They exercise the corpus shape; they do not establish complete producer or
-consumer conformance. In particular, they do not include a producer input
-model, referenced file manifests, agreement between file-entry descriptor and
-referenced manifest `artifactType` values, standard file layers, BigOCI
-parts, decoding, or retrieval graphs. Those should be added only when they can
-be derived from specification text and represented without defining a new
-implementation API.
+To add coverage, copy the closest fixture into the appropriate directory,
+change one behavior, and give the new file a descriptive name. Fixtures do not
+assert implementation error text.
 
 The corpus is released with the specification and has no independent version.

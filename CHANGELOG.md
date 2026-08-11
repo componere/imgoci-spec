@@ -51,6 +51,8 @@ This section records work completed before automated releases were enabled.
 - Required `Accept-Encoding: identity` for manifest and blob retrieval, assigned
   same-repository publication to producers, and clarified imgoci's whole-file
   verification of BigOCI assemblies.
+- Replaced generated Python validation cases and unused case metadata with
+  explicit passing and failing release-index fixtures and a small shell harness.
 
 ### Documentation
 
