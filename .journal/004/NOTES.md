@@ -22,3 +22,6 @@ The implementation branch now defines the standard one-layer manifest as the req
 The standard manifest follows ordinary OCI image-manifest encoding instead of adding JCS or a closed JSON shape. OCI-permitted optional manifest and descriptor members remain valid, preserving interoperability with normal OCI artifact tooling while digest and size still pin the exact bytes. The release index and its conformance fixtures require no wire-format changes.
 
 Validation passed with `mise exec -- moon run root:cue --summary minimal`; this covers CUE formatting, module tidiness, CUE vetting, generated JSON Schema drift, and the fixture matrix. `git diff --check` also passed.
+
+## 2026-08-10 18:07 — Pull request opened
+Committed the targeted change as `bd619a1` (`feat(spec): prefer single-layer OCI file manifests`) on `feat/oci-file-layout` and opened https://github.com/componere/imgoci-spec/pull/7 as a ready pull request. GitHub's `validate` check passed on that exact head.
