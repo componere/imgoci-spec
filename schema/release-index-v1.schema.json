@@ -86,7 +86,7 @@
                     "$ref": "#/$defs/FileEntryAnnotationsShape"
                 },
                 "digest": {
-                    "description": "digest is the SHA-256 digest of the BigOCI manifest.",
+                    "description": "digest is the SHA-256 digest of the referenced file manifest.",
                     "$ref": "#/$defs/SHA256DigestConstraint"
                 },
                 "mediaType": {
@@ -94,7 +94,7 @@
                     "const": "application/vnd.oci.image.manifest.v1+json"
                 },
                 "size": {
-                    "description": "size is the byte length of the BigOCI manifest, not the file content.",
+                    "description": "size is the byte length of the referenced file manifest, not the file content.",
                     "$ref": "#/$defs/ManifestSizeConstraint"
                 }
             },

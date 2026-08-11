@@ -58,8 +58,8 @@ The five initial cases cover:
 
 They exercise the corpus shape; they do not establish complete producer or
 consumer conformance. In particular, they do not include a producer input
-model, referenced BigOCI manifests, file parts, decoding, or retrieval graphs.
-Those should be added only when they can be derived from specification text and
-represented without defining a new implementation API.
+model, referenced file manifests, standard file layers, BigOCI parts, decoding,
+or retrieval graphs. Those should be added only when they can be derived from
+specification text and represented without defining a new implementation API.
 
 The corpus is released with the specification and has no independent version.

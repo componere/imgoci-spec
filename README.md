@@ -35,8 +35,9 @@ repository revision; it does not transfer authority to another artifact.
 
 Passing CUE or JSON Schema validation alone does not establish conformance.
 CUE checks more relationships between file entries than JSON Schema. Rules
-that depend on exact encoded bytes, selection, retrieval, or BigOCI remain
-defined by `spec.md` and may be exercised by the conformance corpus.
+that depend on exact encoded bytes, referenced file manifests, selection, or
+retrieval remain defined by `spec.md` and may be exercised by the conformance
+corpus.
 
 ## Validation
 

@@ -28,16 +28,16 @@ release-wide rules from Sections 5, 6, and 9:
 - transport alternatives for one file have the same content digest, content
   size, and title;
 - different roles in one deliverable have different titles;
-- descriptors for one BigOCI manifest agree on the fields listed in Section 6;
+- descriptors for one file manifest agree on the fields listed in Section 6;
   and
 - file-entry descriptors use the canonical order.
 
 CUE validates a parsed value. It cannot inspect the original JSON bytes, fetch
-referenced objects, or observe repository state. RFC 8785 encoding, BigOCI
-validation, same-repository requirements, retrieval, decoding, and content
-verification remain separate conformance checks. CUE also cannot infer producer
-intent for public and private selector names or verify that `io.imgoci.name`
-stays stable across releases.
+referenced objects, or observe repository state. RFC 8785 encoding, standard
+file-manifest and BigOCI validation, same-repository requirements, retrieval,
+decoding, and content verification remain separate conformance checks. CUE also
+cannot infer producer intent for public and private selector names or verify
+that `io.imgoci.name` stays stable across releases.
 
 ## Generate the JSON Schema compatibility layer
 

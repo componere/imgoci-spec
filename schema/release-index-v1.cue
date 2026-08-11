@@ -11,7 +11,7 @@ import (
 // #ReleaseIndex is the canonical machine-readable schema for the value-level
 // rules of an imgoci v1 release index. It validates the complete release index
 // before a consumer selects a deliverable. Rules that require the original JSON
-// bytes, referenced BigOCI manifests, or repository state remain conformance
+// bytes, referenced file manifests, or repository state remain conformance
 // checks.
 #ReleaseIndex: #ReleaseIndexShape & {
 	// schemaVersion identifies the OCI image-index schema version and must be 2.
@@ -112,7 +112,7 @@ import (
 				}
 
 				if left.digest == right.digest && (left.mediaType != right.mediaType || left.size != right.size || leftCompression != rightCompression || left.annotations["io.imgoci.content.digest"] != right.annotations["io.imgoci.content.digest"] || left.annotations["io.imgoci.content.size"] != right.annotations["io.imgoci.content.size"]) {
-					manifests: error("descriptors for BigOCI manifest \(right.digest) must agree on media type, descriptor size, compression, content digest, and content size")
+					manifests: error("descriptors for file manifest \(right.digest) must agree on media type, descriptor size, compression, content digest, and content size")
 				}
 
 				let leftOrderKey = "\(leftArchitecture)\u0000\(leftTarget)\u0000\(leftRepresentation)\u0000\(leftRole)\u0000\(leftCompression)"
@@ -152,17 +152,17 @@ import (
 }
 
 // #FileEntryDescriptor is one descriptor in the release index. It points to a
-// BigOCI File Format v1 manifest and adds CUE validation errors for invalid
-// local values.
+// standard imgoci file manifest or a BigOCI File Format v1 manifest and adds
+// CUE validation errors for invalid local values.
 #FileEntryDescriptor: #FileEntryDescriptorShape & {
 	// mediaType identifies the referenced object as an OCI image manifest.
 	mediaType: "application/vnd.oci.image.manifest.v1+json" |
 		error("file-entry descriptor mediaType must be application/vnd.oci.image.manifest.v1+json")
 
-	// digest is the SHA-256 digest of the BigOCI manifest.
+	// digest is the SHA-256 digest of the referenced file manifest.
 	digest: #SHA256Digest
 
-	// size is the byte length of the BigOCI manifest, not the file content.
+	// size is the byte length of the referenced file manifest, not the file content.
 	size: #ManifestSize
 
 	// annotations describes the file entry and its decoded content.
@@ -192,10 +192,10 @@ import (
 	// mediaType identifies the referenced object as an OCI image manifest.
 	mediaType!: "application/vnd.oci.image.manifest.v1+json"
 
-	// digest is the SHA-256 digest of the BigOCI manifest.
+	// digest is the SHA-256 digest of the referenced file manifest.
 	digest!: #SHA256DigestConstraint
 
-	// size is the byte length of the BigOCI manifest, not the file content.
+	// size is the byte length of the referenced file manifest, not the file content.
 	size!: #ManifestSizeConstraint
 
 	// annotations describes the file entry and its decoded content.
@@ -403,8 +403,8 @@ import (
 #ReleaseVersionConstraint: string & strings.MinRunes(1) & strings.MaxRunes(128) &
 	=~"^[!-~]+$"
 
-// #ManifestSize is the byte length of a BigOCI manifest with a custom error for
-// invalid values.
+// #ManifestSize is the byte length of a referenced file manifest with a custom
+// error for invalid values.
 #ManifestSize: #ManifestSizeConstraint |
 	error("descriptor size must be a JSON integer from 1 through 9007199254740991")
 
