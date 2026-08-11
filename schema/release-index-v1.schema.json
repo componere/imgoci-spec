@@ -43,10 +43,6 @@
                     "description": "io.imgoci.content.size is the byte length of the decoded content, encoded as\na string matching ^(0|[1-9][0-9]*)$.",
                     "$ref": "#/$defs/ContentSizeConstraint"
                 },
-                "io.imgoci.file.manifest-type": {
-                    "description": "io.imgoci.file.manifest-type identifies the file manifest layout.",
-                    "$ref": "#/$defs/FileManifestTypeConstraint"
-                },
                 "io.imgoci.name": {
                     "description": "io.imgoci.name is a stable product identifier when present.",
                     "$ref": "#/$defs/BasicTokenConstraint"
@@ -74,7 +70,6 @@
                 "io.imgoci.compression",
                 "io.imgoci.content.digest",
                 "io.imgoci.content.size",
-                "io.imgoci.file.manifest-type",
                 "io.imgoci.representation",
                 "io.imgoci.role",
                 "io.imgoci.target",
@@ -89,6 +84,10 @@
                 "annotations": {
                     "description": "annotations describes the file entry and its decoded content.",
                     "$ref": "#/$defs/FileEntryAnnotationsShape"
+                },
+                "artifactType": {
+                    "description": "artifactType identifies the referenced file manifest's artifact type.",
+                    "$ref": "#/$defs/FileManifestTypeConstraint"
                 },
                 "digest": {
                     "description": "digest is the SHA-256 digest of the referenced file manifest.",
@@ -105,6 +104,7 @@
             },
             "required": [
                 "annotations",
+                "artifactType",
                 "digest",
                 "mediaType",
                 "size"
@@ -135,10 +135,6 @@
                 "io.imgoci.content.size": {
                     "description": "io.imgoci.content.size is the byte length of decoded content when present.",
                     "$ref": "#/$defs/ContentSizeConstraint"
-                },
-                "io.imgoci.file.manifest-type": {
-                    "description": "io.imgoci.file.manifest-type identifies the file manifest layout when present.",
-                    "$ref": "#/$defs/FileManifestTypeConstraint"
                 },
                 "io.imgoci.name": {
                     "description": "io.imgoci.name is the stable product identifier shared by all releases of\nthat product.",

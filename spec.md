@@ -106,11 +106,17 @@ delivery conditions vary. The layout decision uses the stored-file size after
 any imgoci compression, not the decoded-content size.
 
 The producer chooses one file-manifest format for each transport alternative.
-The file-entry descriptor declares that format with
-`io.imgoci.file.manifest-type`. The annotation is capability metadata, not a
-selector. It does not change file or deliverable identity and does not permit
-two entries with the same selector tuple. A producer must set it to the exact
-top-level `artifactType` of the referenced manifest.
+The file-entry descriptor declares that format with its OCI `artifactType`
+member. This is capability metadata, not a selector. It does not change file or
+deliverable identity and does not permit two entries with the same selector
+tuple. A producer must set it to the exact top-level `artifactType` of the
+referenced manifest.
+
+imgoci follows the OCI Distribution Specification's artifact-discovery
+convention: descriptor `artifactType` repeats the referenced manifest's
+top-level `artifactType` when that member is present. Both file-manifest formats
+defined by imgoci v1 require that member, so imgoci does not fall back to the
+referenced manifest's config media type.
 
 The release index, file manifests, and blobs must be in the same OCI
 repository.
@@ -161,6 +167,7 @@ those bytes are also the decoded content.
 | Release index | `mediaType` | `application/vnd.oci.image.index.v1+json` |
 | Release index | `artifactType` | `application/vnd.imgoci.release.v1` |
 | File-entry descriptor | `mediaType` | `application/vnd.oci.image.manifest.v1+json` |
+| File-entry descriptor | `artifactType` | Top-level `artifactType` of the referenced file manifest |
 | Standard file manifest | `artifactType` | `application/vnd.imgoci.file.v1` |
 | Standard file config | `mediaType` | `application/vnd.oci.empty.v1+json` |
 | Standard file layer | `mediaType` | `application/octet-stream` |
@@ -214,14 +221,14 @@ A file-entry descriptor must contain only these members:
 
 - `mediaType`;
 - `digest`;
-- `size`; and
+- `size`;
+- `artifactType`; and
 - `annotations`.
 
-The descriptor must not contain `artifactType`, `data`, `platform`, or `urls`.
-The `io.imgoci.file.manifest-type` annotation declares the referenced
-manifest's top-level `artifactType` before the consumer fetches it.
-A producer must set the annotation to the exact value in the referenced
-manifest.
+The descriptor must not contain `data`, `platform`, or `urls`. `artifactType`
+declares the referenced manifest's top-level `artifactType` before the consumer
+fetches it. A producer must set the descriptor member to the exact value in the
+referenced manifest.
 
 `digest` must be `sha256:` followed by 64 lowercase hexadecimal digits.
 
@@ -239,7 +246,6 @@ Every file-entry descriptor must contain these annotations:
 | `io.imgoci.compression` | Decoder applied to the stored file. |
 | `io.imgoci.content.digest` | SHA-256 digest of the decoded content. |
 | `io.imgoci.content.size` | Byte length of the decoded content. |
-| `io.imgoci.file.manifest-type` | Top-level `artifactType` of the referenced file manifest. |
 | `org.opencontainers.image.title` | Safe basename for the decoded content. |
 
 A missing or invalid required annotation makes the whole release index
@@ -277,11 +283,12 @@ hexadecimal digits.
 `io.imgoci.content.size` must be a string matching
 `^(0|[1-9][0-9]*)$`. Its value must not exceed 9223372036854775807.
 
-`io.imgoci.file.manifest-type` must contain a media type that conforms to RFC
-6838. An imgoci v1 producer must use `application/vnd.imgoci.file.v1` or
-`application/vnd.bigoci.file.v1`. A consumer must preserve any other
-syntactically valid value during discovery and treat it as unsupported during
-resolution unless a supported addendum defines it.
+A file-entry descriptor's `artifactType` must contain a media type that
+conforms to RFC 6838. An imgoci v1 producer must use
+`application/vnd.imgoci.file.v1` or `application/vnd.bigoci.file.v1`. A
+consumer must preserve any other syntactically valid value during discovery
+and treat it as unsupported during resolution unless a supported addendum
+defines it.
 
 Public selector values are append-only, and their meanings must not change.
 They are defined only in this specification or a later imgoci addendum. When a
@@ -440,10 +447,10 @@ content. It must not select a different logical file.
 A consumer must validate the complete release index before it selects a
 deliverable.
 
-Release-index validation checks `io.imgoci.file.manifest-type` syntax and
-cross-entry consistency without fetching referenced manifests. The consumer
-checks the declared type against each selected manifest during retrieval as
-required by section 8.
+Release-index validation checks file-entry descriptor `artifactType` syntax
+and cross-entry consistency without fetching referenced manifests. The
+consumer checks the declared type against each selected manifest during
+retrieval as required by section 8.
 
 The release index is invalid if any of these conditions is true:
 
@@ -457,9 +464,9 @@ The release index is invalid if any of these conditions is true:
 6. Transport alternatives for one file have different content digests,
    content sizes, or titles.
 7. Two different roles in one deliverable have the same title.
-8. Two descriptors with the same file-manifest digest disagree on
-   descriptor media type, descriptor size, file-manifest type, compression,
-   content digest, or content size.
+8. Two descriptors with the same file-manifest digest disagree on descriptor
+   media type, descriptor size, artifact type, compression, content digest, or
+   content size.
 9. The descriptor array is not in the canonical order defined in section 9.
 10. The index bytes are not in the canonical form defined in section 9.
 
@@ -478,9 +485,9 @@ matches. It does not choose one.
 A consumer's supported file-manifest types are a capability set. The set must
 contain `application/vnd.imgoci.file.v1`. It contains
 `application/vnd.bigoci.file.v1` only when the consumer supports BigOCI. A
-supported addendum may add other values to the set. A consumer can compare
-this set with `io.imgoci.file.manifest-type` without fetching the referenced
-manifests.
+supported addendum may add other values to the set. A consumer can compare this
+set with a file-entry descriptor's `artifactType` without fetching the
+referenced manifests.
 
 ### 7.1 Fetch the release
 
@@ -552,8 +559,8 @@ A consumer must:
 5. return `role not found` without a partial result when a selected role is
    absent;
 6. inspect the transport alternatives for each selected role;
-7. remove alternatives whose `io.imgoci.file.manifest-type` is not in the
-   consumer's supported file-manifest types;
+7. remove alternatives whose descriptor `artifactType` is not in the consumer's
+   supported file-manifest types;
 8. return `file manifest type not supported` without a partial result when a
    selected role has no remaining alternative;
 9. choose the first accepted compression that exists among the remaining
@@ -588,8 +595,8 @@ fetched manifest's SHA-256 digest against the file-entry descriptor digest and
 its byte length against the descriptor size.
 
 The consumer must require the manifest's top-level `artifactType` to equal the
-descriptor's `io.imgoci.file.manifest-type`. A mismatch is invalid producer
-output and fails the complete resolved result.
+descriptor's `artifactType`. A mismatch is invalid producer output and fails
+the complete resolved result.
 
 The consumer must then inspect the manifest's `artifactType` and recover the
 stored file as follows:
@@ -710,12 +717,12 @@ placeholders with valid syntax. A producer sends the compact RFC 8785 form.
         "io.imgoci.compression": "xz",
         "io.imgoci.content.digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
         "io.imgoci.content.size": "8589934592",
-        "io.imgoci.file.manifest-type": "application/vnd.imgoci.file.v1",
         "io.imgoci.representation": "qcow2",
         "io.imgoci.role": "disk",
         "io.imgoci.target": "qemu",
         "org.opencontainers.image.title": "exampleos-42.1.qcow2"
       },
+      "artifactType": "application/vnd.imgoci.file.v1",
       "digest": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
       "mediaType": "application/vnd.oci.image.manifest.v1+json",
       "size": 812

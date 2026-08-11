@@ -11,12 +11,12 @@
         "io.imgoci.compression": "none",
         "io.imgoci.content.digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
         "io.imgoci.content.size": "0",
-        "io.imgoci.file.manifest-type": "application/vnd.imgoci.file.v1",
         "io.imgoci.representation": "x-test-format",
         "io.imgoci.role": "x-test-file",
         "io.imgoci.target": "x-test-target",
         "org.opencontainers.image.title": "a"
       },
+      "artifactType": "application/vnd.imgoci.file.v1",
       "digest": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
       "mediaType": "application/vnd.oci.image.manifest.v1+json",
       "size": 1

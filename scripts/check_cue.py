@@ -147,11 +147,9 @@ def invalid_mutations() -> list[tuple[str, dict[str, Any]]]:
     value = copy.deepcopy(base)
     shared = copy.deepcopy(value["manifests"][0])
     shared["annotations"]["io.imgoci.architecture"] = "arm64"
-    shared["annotations"]["io.imgoci.file.manifest-type"] = (
-        "application/vnd.bigoci.file.v1"
-    )
+    shared["artifactType"] = "application/vnd.bigoci.file.v1"
     value["manifests"].append(shared)
-    mutations.append(("inconsistent-shared-manifest-type", value))
+    mutations.append(("inconsistent-shared-artifact-type", value))
 
     value = copy.deepcopy(alternatives)
     value["manifests"].reverse()
@@ -170,14 +168,18 @@ def invalid_mutations() -> list[tuple[str, dict[str, Any]]]:
     mutations.append(("reserved-annotation", value))
 
     value = copy.deepcopy(base)
-    del value["manifests"][0]["annotations"]["io.imgoci.file.manifest-type"]
-    mutations.append(("missing-file-manifest-type", value))
+    value["manifests"][0]["annotations"]["io.imgoci.file.manifest-type"] = (
+        "application/vnd.imgoci.file.v1"
+    )
+    mutations.append(("legacy-file-manifest-type-annotation", value))
 
     value = copy.deepcopy(base)
-    value["manifests"][0]["annotations"]["io.imgoci.file.manifest-type"] = (
-        "application"
-    )
-    mutations.append(("malformed-file-manifest-type", value))
+    del value["manifests"][0]["artifactType"]
+    mutations.append(("missing-artifact-type", value))
+
+    value = copy.deepcopy(base)
+    value["manifests"][0]["artifactType"] = "application"
+    mutations.append(("malformed-artifact-type", value))
 
     return mutations
 
@@ -209,9 +211,7 @@ def check_fixture_matrix() -> None:
         temporary = Path(directory)
 
         bigoci = load_index("valid-minimal")
-        bigoci["manifests"][0]["annotations"]["io.imgoci.file.manifest-type"] = (
-            "application/vnd.bigoci.file.v1"
-        )
+        bigoci["manifests"][0]["artifactType"] = "application/vnd.bigoci.file.v1"
         bigoci_path = temporary / "accepted-bigoci-file-manifest.json"
         write_index(bigoci_path, bigoci)
         result = cue_vet(bigoci_path)
@@ -221,9 +221,7 @@ def check_fixture_matrix() -> None:
             )
 
         unknown = load_index("valid-minimal")
-        unknown["manifests"][0]["annotations"]["io.imgoci.file.manifest-type"] = (
-            "application/vnd.example.file.v1"
-        )
+        unknown["manifests"][0]["artifactType"] = "application/vnd.example.file.v1"
         unknown_path = temporary / "accepted-unknown-file-manifest.json"
         write_index(unknown_path, unknown)
         result = cue_vet(unknown_path)

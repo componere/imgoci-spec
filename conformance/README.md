@@ -59,8 +59,8 @@ The five initial cases cover:
 
 They exercise the corpus shape; they do not establish complete producer or
 consumer conformance. In particular, they do not include a producer input
-model, referenced file manifests, agreement between file-manifest-type
-annotations and referenced `artifactType` values, standard file layers, BigOCI
+model, referenced file manifests, agreement between file-entry descriptor and
+referenced manifest `artifactType` values, standard file layers, BigOCI
 parts, decoding, or retrieval graphs. Those should be added only when they can
 be derived from specification text and represented without defining a new
 implementation API.

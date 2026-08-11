@@ -20,6 +20,8 @@ This section records work completed before automated releases were enabled.
   as one blob.
 - Advertised each file manifest's type in its release-index descriptor so a
   consumer can remove unsupported formats before choosing a compression.
+- Replaced the private file-manifest-type annotation with the standard OCI
+  descriptor `artifactType` field.
 
 ### Documentation
 
