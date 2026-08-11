@@ -601,11 +601,11 @@ Every manifest and blob `GET` request in sections 7.1 and 8 must contain:
 Accept-Encoding: identity
 ~~~
 
-A consumer must reject a response to one of these requests if it contains a
-`Content-Encoding` field. For every manifest fetch in sections 7.1 and 8, the
-manifest bytes are the response content before parsing JSON. A consumer must
-use these bytes without re-encoding them for every digest and byte-length
-calculation.
+If a response to one of these requests contains a `Content-Encoding` field, its
+value must contain only `identity`. The `identity` value does not change the
+response content. For every manifest fetch in sections 7.1 and 8, the manifest
+bytes are the response content before parsing JSON. A consumer must use these
+bytes without re-encoding them for every digest and byte-length calculation.
 
 A consumer must:
 
@@ -671,25 +671,29 @@ accepted-compression list defined in section 7.1.
 A consumer must:
 
 1. find the deliverable with the exact requested key;
-2. return `deliverable not found` if it does not exist;
-3. when the role list is omitted, select every role for `linux-netboot`.
-   Otherwise, select the required roles defined by this specification or a
-   supported addendum. If no such definition is known, select every role;
-4. require every requested role when a role list is present;
-5. return `role not found` without a partial result when a selected role is
-   absent;
-6. inspect the transport alternatives for each selected role;
-7. remove alternatives whose descriptor `artifactType` is not in the consumer's
+2. fail without a result if it does not exist;
+3. when the role list is present, select exactly the requested roles;
+4. when the role list is omitted for `linux-netboot`, select every role;
+5. when the role list is omitted for another representation, select the
+   required roles defined by this specification or a supported addendum. If no
+   such definition is known, select every role;
+6. fail without a partial result when a selected role is absent;
+7. inspect the transport alternatives for each selected role;
+8. remove alternatives whose descriptor `artifactType` is not in the consumer's
    supported file-manifest types;
-8. return `file manifest type not supported` without a partial result when a
-   selected role has no remaining alternative;
-9. choose the first accepted compression that exists among the remaining
-   alternatives for that role; and
-10. return `compression not available` without a partial result when a role
-    has no accepted alternative.
+9. fail without a partial result when a selected role has no remaining
+   alternative;
+10. choose the first accepted compression that exists among the remaining
+    alternatives for that role; and
+11. fail without a partial result when a selected role has no accepted
+    alternative.
 
-For steps 6 through 10, the consumer must complete each step for every selected
+For steps 7 through 11, the consumer must complete each step for every selected
 role before starting the next step. Any failure returns no roles.
+
+A present role list always limits the resolved result to those roles. For
+example, requesting only `initramfs` from a `linux-netboot` deliverable selects
+only `initramfs`, not the required `kernel` role.
 
 An accepted-compression list with one item is an exact compression request. A
 consumer may select different compressions for different roles.
@@ -744,8 +748,9 @@ stored file as follows:
    manifest's `io.bigoci.file.digest` and `io.bigoci.file.size` annotations. The
    assembled bytes are the stored file.
 3. For another syntactically valid value, use the rules for that format when the
-   consumer supports it. Otherwise, return `file manifest type not supported`.
-   Reject a missing or syntactically invalid `artifactType`.
+   consumer supports it. Otherwise, fail the complete resolved result because
+   the file-manifest type is unsupported. Reject a missing or syntactically
+   invalid `artifactType`.
 
 After recovering the complete stored file, the consumer must:
 
@@ -810,6 +815,9 @@ The caller supplies a tag or digest. imgoci v1 does not derive a tag from
 `org.opencontainers.image.version`.
 
 A digest reference used by imgoci v1 must use SHA-256.
+
+When a producer publishes a release index under a tag, the same release-index
+bytes must be retrievable from the same repository by their SHA-256 digest.
 
 A tag is a lookup name, not the identity of a release.
 
@@ -921,7 +929,7 @@ every role present.
 - [OCI Distribution Specification v1.1.1](https://github.com/opencontainers/distribution-spec/blob/v1.1.1/spec.md)
 - [RFC 9110: HTTP Semantics](https://www.rfc-editor.org/rfc/rfc9110.html)
 - [RFC 6838: Media Type Specifications and Registration Procedures](https://www.rfc-editor.org/rfc/rfc6838.html)
-- [BigOCI File Format v1](https://github.com/componere/bigoci/blob/v0.1.0/docs/docs/reference/format.md)
+- [BigOCI File Format v1](https://github.com/imgoci/bigoci/blob/v0.1.0/docs/docs/reference/format.md)
 - [RFC 1952: GZIP file format](https://www.rfc-editor.org/rfc/rfc1952.html)
 - [The .xz File Format, version 1.2.1](https://tukaani.org/xz/xz-file-format-1.2.1.txt)
 - [RFC 8878: Zstandard compression](https://www.rfc-editor.org/rfc/rfc8878.html)

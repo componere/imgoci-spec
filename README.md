@@ -61,9 +61,9 @@ same locked tools and runs the same Moon task.
 
 ## Implementation
 
-[`componere/imgoci`](https://github.com/componere/imgoci) is the canonical Go
-implementation. The specification repository does not depend on, execute, or
-generate normative material from that implementation.
+The canonical Go implementation is under development and is not yet public.
+The specification repository does not depend on, execute, or generate normative
+material from that implementation.
 
 ## Contributing
 
