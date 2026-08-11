@@ -14,8 +14,8 @@
 ## File manifest layouts
 
 - `application/vnd.imgoci.file.v1` is the required baseline: an OCI image manifest with the OCI empty config and exactly one `application/octet-stream` layer containing the complete stored file. BigOCI is optional, must contain at least two parts, and is reserved for stored bytes that cannot be handled reliably as one blob; v1 has no numeric threshold.
-- Every file entry declares the referenced manifest's top-level `artifactType` in `io.imgoci.file.manifest-type`. Do not use OCI descriptor `artifactType` for this because both layouts use the OCI empty config. Base-v1 producers use the imgoci or BigOCI value; consumers preserve other valid RFC 6838 media types during discovery.
-- Broad listing exposes every manifest type. Resolution removes unsupported types across all selected roles before applying compression preference. Retrieval requires the fetched top-level `artifactType` to match the annotation, and a mismatch fails the complete result without fallback. CUE checks syntax and same-digest consistency; fetched-object equality and layout validation remain external checks.
+- Every file-entry descriptor uses OCI descriptor `artifactType` to declare the referenced file manifest's required top-level `artifactType`. imgoci follows the OCI Distribution manifest-type convention rather than the narrower OCI Image descriptor wording. Base-v1 producers use the imgoci or BigOCI value; consumers preserve other valid RFC 6838 media types during discovery.
+- Broad listing exposes every manifest type. Resolution removes unsupported types across all selected roles before applying compression preference. Retrieval requires the fetched top-level `artifactType` to match the descriptor `artifactType`, and a mismatch fails the complete result without fallback. CUE checks syntax and same-digest consistency; fetched-object equality and layout validation remain external checks.
 
 ## Incus VM representation
 
