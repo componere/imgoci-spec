@@ -1,6 +1,6 @@
 # imgoci release format v1
 
-Status: draft, 2026-08-10
+Status: draft, 2026-08-11
 
 This document defines the imgoci release format.
 
@@ -26,7 +26,8 @@ This specification does not define:
 - integration with an existing image reader or engine;
 - a compatibility adapter for another catalog or schema;
 - image conversion, installation, or boot behavior;
-- the contents of a disk image, filesystem image, or boot artifact;
+- decoded-content structure beyond the representation requirements in section
+  5.4;
 - a signature format, attestation format, trust policy, or key format;
 - tag discovery, version ordering, or a channel catalog;
 - sparse-file restoration, delta transfer, update policy, or revocation; or
@@ -132,7 +133,8 @@ An imgoci consumer must not reject a supported OCI object or descriptor because
 its `annotations` map contains an unknown key. Unknown annotation keys have no
 imgoci-defined meaning.
 
-A file-entry descriptor must not contain an OCI `platform` object.
+An imgoci producer must not put an OCI `platform` object in a file-entry
+descriptor.
 `io.imgoci.architecture` is the only architecture value used by this format.
 This leaves one source of architecture metadata. This specification does not
 define how a general OCI image client handles the index.
@@ -168,11 +170,13 @@ imgoci producer must not add other members. Its `mediaType` must be
 lowercase hexadecimal digits. Its `size` must be a JSON integer from 0 through
 9007199254740991.
 
-A consumer must accept an OCI `annotations` member on the manifest, config
-descriptor, or file-layer descriptor. The member must map string keys to string
-values. Unknown annotation keys have no imgoci-defined meaning, but they affect
-the encoded bytes and manifest digest. A consumer must reject any unlisted
-member other than `annotations`.
+A consumer must accept additional members on the manifest, config descriptor,
+or file-layer descriptor. It must apply this section's rules to the defined
+members and ignore other members for imgoci behavior. An `annotations` member,
+when present, must map string keys to string values. Unknown annotation keys
+have no imgoci-defined meaning, but they affect the encoded bytes and manifest
+digest. Additional members also affect those bytes and digest and must satisfy
+the canonical encoding rule in section 9.
 
 The producer member sets are fixed. A conforming producer's standard file
 manifest is a function of its layer digest and layer size alone. Section 9
@@ -225,7 +229,9 @@ A release index must contain these members:
 | `manifests` | Must be a non-empty array of valid file-entry descriptors. |
 | `annotations` | Must contain the two annotations below. |
 
-A v1 release index must not contain other top-level members.
+An imgoci producer must not add other top-level members. A consumer must accept
+an otherwise valid release index with additional top-level members and ignore
+them for imgoci behavior.
 
 The required index annotations are:
 
@@ -246,7 +252,7 @@ and version label that object.
 
 ### 5.2 File-entry descriptor
 
-A file-entry descriptor must contain only these members:
+A file-entry descriptor must contain these members:
 
 - `mediaType`;
 - `digest`;
@@ -254,10 +260,11 @@ A file-entry descriptor must contain only these members:
 - `artifactType`; and
 - `annotations`.
 
-The descriptor must not contain `data`, `platform`, or `urls`. `artifactType`
-declares the referenced manifest's top-level `artifactType` before the consumer
-fetches it. A producer must set it to the same media type as that top-level
-member.
+An imgoci producer must not add other members, including `data`, `platform`, or
+`urls`. A consumer must accept an otherwise valid descriptor with additional
+members and ignore them when interpreting the release. `artifactType` declares
+the referenced manifest's top-level `artifactType` before the consumer fetches
+it. A producer must set it to the same media type as that top-level member.
 
 `digest` must be `sha256:` followed by 64 lowercase hexadecimal digits.
 
@@ -275,7 +282,7 @@ Every file-entry descriptor must contain these annotations:
 | `io.imgoci.compression` | Decoder applied to the stored file. |
 | `io.imgoci.content.digest` | SHA-256 digest of the decoded content. |
 | `io.imgoci.content.size` | Byte length of the decoded content. |
-| `org.opencontainers.image.title` | Safe basename for the decoded content. |
+| `io.imgoci.filename` | Producer-chosen filename for the decoded content. |
 
 A missing or invalid required annotation makes the whole release index
 invalid.
@@ -289,6 +296,16 @@ including an unknown `io.imgoci.` key. Unknown annotations do not affect
 selection, but all annotations affect the release-index digest. A producer that
 needs a reproducible digest should not add annotations whose values can differ
 across otherwise identical release indexes.
+
+An annotation's imgoci syntax and meaning apply only at an object location
+where this specification or an addendum defines that annotation. At another
+annotation location, a consumer must treat the same key as an unknown
+annotation. A producer must not emit a defined annotation at another location
+unless this specification or an addendum also defines it there.
+
+Consumer-ignored members and annotations remain part of the encoded release
+index. They affect its digest and must satisfy the canonical encoding rule in
+section 9.
 
 ### 5.3 Value syntax
 
@@ -345,15 +362,17 @@ To classify one file for more than one architecture or target, a producer emits
 one descriptor for each value. Those descriptors may share one file-manifest
 digest.
 
-A title must match:
+A filename must match:
 
 ~~~text
 ^[a-z0-9]([a-z0-9._+-]{0,253}[a-z0-9])?$
 ~~~
 
-A title is one path component. It must not be `.` or `..`. A consumer must
-not parse a title to discover architecture, target, representation, role, or
-compression.
+A filename is one path component. It must not be `.` or `..`. This syntax does
+not guarantee that the value is valid on every filesystem. A consumer must
+apply destination-specific rules before using it as a local filename and may
+map it to another local name. A consumer must not parse a filename to discover
+architecture, target, representation, role, or compression.
 
 ### 5.4 Standard selector values
 
@@ -417,6 +436,16 @@ not contain the root disk; the `disk` role carries that file.
 The XZ stream is part of the decoded `metadata` content. An entry that stores
 the XZ stream directly uses `compression=none`. If an entry applies an imgoci
 compression, decoding it must produce the exact XZ stream.
+
+A producer must assign architecture, target, representation, and role values
+that describe the decoded content and deliverable. When it uses a standard
+representation, the decoded content must have the form listed in the table.
+During imgoci validation and retrieval, a consumer verifies transport
+structure, decoding, size, and digest as specified in section 8. It is not
+required to parse decoded content to confirm the declared selectors, role, or
+representation-internal structure. Format-specific validation performed when
+importing, booting, or otherwise using decoded content is outside this
+specification.
 
 A deliverable using a standard representation must contain every required role
 listed for that representation. It may contain other roles. Those roles do not
@@ -503,8 +532,8 @@ The release index is invalid for a consumer if any of these conditions is true:
 5. Two entries have the same
    `(architecture, target, representation, role, compression)` tuple.
 6. Transport alternatives for one file have different content digests,
-   content sizes, or titles.
-7. Two different roles in one deliverable have the same title.
+   content sizes, or filenames.
+7. Two different roles in one deliverable have the same filename.
 8. Two descriptors with the same file-manifest digest disagree on descriptor
    media type or artifact type under section 4, or disagree on descriptor size,
    compression, content digest, or content size.
@@ -512,11 +541,11 @@ The release index is invalid for a consumer if any of these conditions is true:
 10. The index bytes are not in the canonical form defined in section 9.
 
 Producer-only requirements are not consumer-validation requirements. These
-include reserved annotation names, public selector naming, and lowercase media
-type spelling.
+include fixed producer member sets, reserved annotation names, public selector
+naming, and lowercase media-type spelling.
 
 Descriptors that share a file-manifest digest may differ in architecture,
-target, representation, role, and title. This allows one stored file to be
+target, representation, role, and filename. This allows one stored file to be
 classified for more than one deliverable without copying it.
 
 If an index is invalid, a consumer must reject the entire index. It must not
@@ -546,18 +575,35 @@ list must be non-empty and contain no duplicates. Every value in that list must
 name a compression that the consumer can decode. List order runs from most
 preferred to least preferred.
 
+A consumer must fetch the release index with an OCI Distribution manifest
+`GET` request. The request must contain:
+
+~~~text
+Accept: application/vnd.oci.image.index.v1+json
+~~~
+
+For every manifest fetch in sections 7.1 and 8, the manifest bytes are the
+response content after decoding every HTTP `Content-Encoding` and before
+parsing JSON. A consumer must use these bytes without re-encoding them for
+every digest and byte-length calculation.
+
 A consumer must:
 
-1. fetch the referenced release index;
-2. compute the SHA-256 digest of the exact response bytes;
-3. if the caller supplied a digest reference, require the computed digest to
+1. require a `200 OK` response;
+2. require the response `Content-Type`, after ignoring its parameters, to
+   identify `application/vnd.oci.image.index.v1+json` under section 4;
+3. compute the SHA-256 digest of the manifest bytes;
+4. if the caller supplied a digest reference, require the computed digest to
    match the digest in that reference;
-4. if the registry sends a `Docker-Content-Digest` header, either ignore it or
-   verify it against the exact response bytes with the digest algorithm named
-   in its value;
-5. use the computed digest to pin a tag reference;
-6. validate the complete release index; and
-7. use digest references for all later fetches.
+5. if the registry sends a `Docker-Content-Digest` header, either ignore it or
+   verify it against the manifest bytes with the digest algorithm named in its
+   value;
+6. parse the manifest bytes and require its top-level `mediaType` to identify
+   the same media type as the response `Content-Type` under section 4;
+7. validate the complete release index;
+8. if the caller supplied a tag, record the computed SHA-256 digest as the
+   resolved release reference for this operation; and
+9. use digest references for all later fetches.
 
 The `Docker-Content-Digest` header may use an algorithm other than SHA-256. A
 consumer that uses the header must verify its value with that algorithm. It
@@ -634,17 +680,31 @@ standard manifest type, the consumer selects it. This is selection, not
 post-retrieval fallback.
 
 The producer does not mark one compression as preferred. Every transport
-alternative for a file has the same content digest, size, and title.
+alternative for a file has the same content digest, size, and filename.
 
 An operation that needs to interpret a representation or role may report the
 representation or role value as unsupported. A consumer may still list,
-mirror, or verify stored files whose selector values it does not understand.
+mirror, or verify stored-file and decoded-content integrity when it does not
+understand the selector values.
 
 ## 8. Retrieval and verification
 
-A consumer must fetch each selected file manifest by digest. It must verify the
-fetched manifest's SHA-256 digest against the file-entry descriptor digest and
-its byte length against the descriptor size.
+A consumer must fetch each selected file manifest by its descriptor digest with
+an OCI Distribution manifest `GET` request. The request must contain an
+`Accept` header whose value is the descriptor's `mediaType`.
+
+The consumer must apply the manifest-byte definition in section 7.1 and:
+
+1. require a `200 OK` response;
+2. verify the SHA-256 digest and byte length of the manifest bytes against the
+   file-entry descriptor;
+3. if the registry sends a `Docker-Content-Digest` header, apply the rule in
+   section 7.1; and
+4. parse the manifest bytes and require the response `Content-Type`, after
+   ignoring its parameters, and the manifest's top-level `mediaType` to identify
+   the same media type as the descriptor's `mediaType` under section 4.
+
+A failure in these checks fails the complete resolved result.
 
 The consumer must require the manifest's top-level `artifactType` and the
 descriptor's `artifactType` to identify the same media type under section 4. A
@@ -678,14 +738,14 @@ When `compression=none`, the standard file-layer digest and size or the BigOCI
 whole-file digest and size must equal the corresponding imgoci content digest
 and size.
 
-The file-entry title names the decoded output. A BigOCI title is informational
-only and has no imgoci meaning.
+The `io.imgoci.filename` annotation names the decoded output. A BigOCI title is
+informational only and has no imgoci meaning.
 
-A consumer must not treat a file as verified before it passes every required
-check. A manifest-type mismatch, decoding failure, or integrity failure is not
-a selection failure. It fails the complete resolved result. The consumer must
-not select another transport alternative in response. This specification does
-not define network retries.
+A consumer must not treat a file as having passed imgoci retrieval verification
+before it passes every required check. A manifest-type mismatch, decoding
+failure, or integrity failure is not a selection failure. It fails the complete
+resolved result. The consumer must not select another transport alternative in
+response. This specification does not define network retries.
 
 ## 9. Deterministic encoding
 
@@ -754,7 +814,7 @@ consumer.
 Non-normative conformance artifacts may include a JSON Schema, positive
 fixtures, and negative fixtures. A JSON Schema can check structure and field
 syntax. Fixtures can cover cross-entry rules, canonical bytes, selection,
-file-manifest validation, and decoded-content verification.
+file-manifest validation, and decoded-content digest and size verification.
 
 ## 13. Non-normative examples
 
@@ -776,10 +836,10 @@ index and of the standard file manifest.
         "io.imgoci.compression": "xz",
         "io.imgoci.content.digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
         "io.imgoci.content.size": "8589934592",
+        "io.imgoci.filename": "exampleos-42.1.qcow2",
         "io.imgoci.representation": "qcow2",
         "io.imgoci.role": "disk",
-        "io.imgoci.target": "qemu",
-        "org.opencontainers.image.title": "exampleos-42.1.qcow2"
+        "io.imgoci.target": "qemu"
       },
       "artifactType": "application/vnd.imgoci.file.v1",
       "digest": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
@@ -836,6 +896,7 @@ alternatives.
 - [OCI Image Format, image manifest](https://github.com/opencontainers/image-spec/blob/v1.1.1/manifest.md)
 - [OCI Image Format, descriptor](https://github.com/opencontainers/image-spec/blob/v1.1.1/descriptor.md)
 - [OCI Distribution Specification v1.1.1](https://github.com/opencontainers/distribution-spec/blob/v1.1.1/spec.md)
+- [RFC 9110: HTTP Semantics](https://www.rfc-editor.org/rfc/rfc9110.html)
 - [RFC 6838: Media Type Specifications and Registration Procedures](https://www.rfc-editor.org/rfc/rfc6838.html)
 - [BigOCI File Format v1](https://github.com/componere/bigoci/blob/v0.1.0/docs/docs/reference/format.md)
 - [RFC 1952: GZIP file format](https://www.rfc-editor.org/rfc/rfc1952.html)

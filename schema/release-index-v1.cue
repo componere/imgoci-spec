@@ -33,28 +33,6 @@ import (
 	// annotations labels the release index with its stable product identifier and
 	// producer-assigned release version. It may contain other OCI annotations.
 	annotations!: #IndexAnnotations
-	// Defined imgoci annotations keep their full value constraints when they are
-	// used as other annotations on the release index.
-	for annotationName, annotationValue in annotations {
-		if annotationName == "io.imgoci.architecture" {
-			for architecturePart in strings.Split(annotationValue & #ArchitectureConstraint, "/") {
-				if len(architecturePart) > 128 {
-					annotations: {
-						// _architectureValueError reports the per-token byte limit for this defined annotation.
-						_architectureValueError: error("io.imgoci.architecture must contain no more than 128 ASCII bytes in each token")
-					}
-				}
-			}
-		}
-		if annotationName == "io.imgoci.content.size" {
-			if strconv.Atoi(annotationValue & #ContentSizeConstraint) > 9223372036854775807 {
-				annotations: {
-					// _contentSizeValueError reports the decoded-content size limit for this defined annotation.
-					_contentSizeValueError: error("io.imgoci.content.size must not exceed 9223372036854775807")
-				}
-			}
-		}
-	}
 
 	// Every standard representation must contain its required roles in each
 	// deliverable that uses the representation.
@@ -113,12 +91,12 @@ import (
 					manifests: error("transport alternative \(rightArchitecture), \(rightTarget), \(rightRepresentation), \(rightRole), \(rightCompression) is duplicated")
 				}
 
-				if sameFile && (left.annotations["io.imgoci.content.digest"] != right.annotations["io.imgoci.content.digest"] || left.annotations["io.imgoci.content.size"] != right.annotations["io.imgoci.content.size"] || left.annotations["org.opencontainers.image.title"] != right.annotations["org.opencontainers.image.title"]) {
-					manifests: error("transport alternatives for file \(rightArchitecture), \(rightTarget), \(rightRepresentation), \(rightRole) must have the same content digest, content size, and title")
+				if sameFile && (left.annotations["io.imgoci.content.digest"] != right.annotations["io.imgoci.content.digest"] || left.annotations["io.imgoci.content.size"] != right.annotations["io.imgoci.content.size"] || left.annotations["io.imgoci.filename"] != right.annotations["io.imgoci.filename"]) {
+					manifests: error("transport alternatives for file \(rightArchitecture), \(rightTarget), \(rightRepresentation), \(rightRole) must have the same content digest, content size, and filename")
 				}
 
-				if sameDeliverable && leftRole != rightRole && left.annotations["org.opencontainers.image.title"] == right.annotations["org.opencontainers.image.title"] {
-					manifests: error("different roles in deliverable \(rightArchitecture), \(rightTarget), \(rightRepresentation) must have different titles")
+				if sameDeliverable && leftRole != rightRole && left.annotations["io.imgoci.filename"] == right.annotations["io.imgoci.filename"] {
+					manifests: error("different roles in deliverable \(rightArchitecture), \(rightTarget), \(rightRepresentation) must have different filenames")
 				}
 
 				if left.digest == right.digest && (strings.ToLower(left.mediaType) != strings.ToLower(right.mediaType) || left.size != right.size || strings.ToLower(left.artifactType) != strings.ToLower(right.artifactType) || leftCompression != rightCompression || left.annotations["io.imgoci.content.digest"] != right.annotations["io.imgoci.content.digest"] || left.annotations["io.imgoci.content.size"] != right.annotations["io.imgoci.content.size"]) {
@@ -136,13 +114,15 @@ import (
 }
 
 // #ReleaseIndexJSONSchema is the best-effort JSON Schema compatibility
-// projection. It preserves the closed object shapes and local field constraints
+// projection. It preserves the required object shapes and local field constraints
 // that CUE can translate without weakening #ReleaseIndex.
 #ReleaseIndexJSONSchema: #ReleaseIndexShape
 
-// #ReleaseIndexShape defines the closed release-index object and local field
+// #ReleaseIndexShape defines the release-index object and local field
 // constraints used by the JSON Schema projection.
 #ReleaseIndexShape: {
+	...
+
 	// schemaVersion identifies the OCI image-index schema version and must be 2.
 	schemaVersion!: 2
 
@@ -197,9 +177,11 @@ import (
 	}
 }
 
-// #FileEntryDescriptorShape defines the closed file-entry descriptor and local
+// #FileEntryDescriptorShape defines the file-entry descriptor and local
 // field constraints used by the JSON Schema projection.
 #FileEntryDescriptorShape: {
+	...
+
 	// mediaType identifies the referenced object as an OCI image manifest.
 	mediaType!: #ImageManifestMediaTypeConstraint
 
@@ -216,8 +198,8 @@ import (
 	annotations!: #FileEntryAnnotationsShape
 }
 
-// #IndexAnnotations is the release-index annotation map with CUE constraints
-// for its required values and all defined imgoci annotation values.
+// #IndexAnnotations is the release-index annotation map. Only annotations
+// defined for this object location receive imgoci value constraints.
 #IndexAnnotations: {
 	// io.imgoci.name is the stable product identifier shared by all releases of
 	// that product.
@@ -227,31 +209,8 @@ import (
 	// It is metadata; imgoci defines neither a tag mapping nor version order.
 	"org.opencontainers.image.version"!: #ReleaseVersion
 
-	// io.imgoci.architecture is an architecture selector when present.
-	"io.imgoci.architecture"?: #Architecture
-
-	// io.imgoci.target is a target selector when present.
-	"io.imgoci.target"?: #BasicToken
-
-	// io.imgoci.representation is a deliverable representation selector when
-	// present.
-	"io.imgoci.representation"?: #BasicToken
-
-	// io.imgoci.role is a file role when present.
-	"io.imgoci.role"?: #BasicToken
-
-	// io.imgoci.compression is a decoder applied to a stored file when present.
-	"io.imgoci.compression"?: #BasicToken
-
-	// io.imgoci.content.digest is a SHA-256 digest of decoded content when
-	// present.
-	"io.imgoci.content.digest"?: #SHA256Digest
-
-	// io.imgoci.content.size is the byte length of decoded content when present.
-	"io.imgoci.content.size"?: #ContentSize
-
-	// Consumer validation accepts every unknown annotation key.
-	[(string & !~"^(io\\.imgoci\\.(name|architecture|target|representation|role|compression|content\\.digest|content\\.size)|org\\.opencontainers\\.image\\.version)$")]: string
+	// Consumer validation accepts every other annotation as an opaque string.
+	[(string & !~"^(io\\.imgoci\\.name|org\\.opencontainers\\.image\\.version)$")]: string
 }
 
 // #IndexAnnotationsShape defines release-index annotation constraints used by
@@ -266,35 +225,12 @@ import (
 	// It is metadata; imgoci defines neither a tag mapping nor version order.
 	"org.opencontainers.image.version"!: #ReleaseVersionConstraint
 
-	// io.imgoci.architecture is an architecture selector when present.
-	"io.imgoci.architecture"?: #ArchitectureConstraint
-
-	// io.imgoci.target is a target selector when present.
-	"io.imgoci.target"?: #BasicTokenConstraint
-
-	// io.imgoci.representation is a deliverable representation selector when
-	// present.
-	"io.imgoci.representation"?: #BasicTokenConstraint
-
-	// io.imgoci.role is a file role when present.
-	"io.imgoci.role"?: #BasicTokenConstraint
-
-	// io.imgoci.compression is a decoder applied to a stored file when present.
-	"io.imgoci.compression"?: #BasicTokenConstraint
-
-	// io.imgoci.content.digest is a SHA-256 digest of decoded content when
-	// present.
-	"io.imgoci.content.digest"?: #SHA256DigestConstraint
-
-	// io.imgoci.content.size is the byte length of decoded content when present.
-	"io.imgoci.content.size"?: #ContentSizeConstraint
-
-	// Consumer validation accepts every unknown annotation key.
-	[(string & !~"^(io\\.imgoci\\.(name|architecture|target|representation|role|compression|content\\.digest|content\\.size)|org\\.opencontainers\\.image\\.version)$")]: string
+	// Consumer validation accepts every other annotation as an opaque string.
+	[(string & !~"^(io\\.imgoci\\.name|org\\.opencontainers\\.image\\.version)$")]: string
 }
 
-// #FileEntryAnnotations is the file-entry annotation map with CUE constraints
-// for its required values and all defined imgoci annotation values.
+// #FileEntryAnnotations is the file-entry annotation map. Only annotations
+// defined for this object location receive imgoci value constraints.
 #FileEntryAnnotations: {
 	// io.imgoci.architecture is the architecture selector.
 	"io.imgoci.architecture"!: #Architecture
@@ -318,14 +254,11 @@ import (
 	// a string matching ^(0|[1-9][0-9]*)$.
 	"io.imgoci.content.size"!: #ContentSize
 
-	// org.opencontainers.image.title is a safe basename for the decoded content.
-	"org.opencontainers.image.title"!: #Title
+	// io.imgoci.filename is the producer-chosen filename for the decoded content.
+	"io.imgoci.filename"!: #Filename
 
-	// io.imgoci.name is a stable product identifier when present.
-	"io.imgoci.name"?: #BasicToken
-
-	// Consumer validation accepts every unknown annotation key.
-	[(string & !~"^(io\\.imgoci\\.(name|architecture|target|representation|role|compression|content\\.digest|content\\.size)|org\\.opencontainers\\.image\\.title)$")]: string
+	// Consumer validation accepts every other annotation as an opaque string.
+	[(string & !~"^io\\.imgoci\\.(architecture|target|representation|role|compression|content\\.digest|content\\.size|filename)$")]: string
 }
 
 // #FileEntryAnnotationsShape defines file-entry annotation constraints used by
@@ -354,14 +287,11 @@ import (
 	// a string matching ^(0|[1-9][0-9]*)$.
 	"io.imgoci.content.size"!: #ContentSizeConstraint
 
-	// org.opencontainers.image.title is a safe basename for the decoded content.
-	"org.opencontainers.image.title"!: #TitleConstraint
+	// io.imgoci.filename is the producer-chosen filename for the decoded content.
+	"io.imgoci.filename"!: #FilenameConstraint
 
-	// io.imgoci.name is a stable product identifier when present.
-	"io.imgoci.name"?: #BasicTokenConstraint
-
-	// Consumer validation accepts every unknown annotation key.
-	[(string & !~"^(io\\.imgoci\\.(name|architecture|target|representation|role|compression|content\\.digest|content\\.size)|org\\.opencontainers\\.image\\.title)$")]: string
+	// Consumer validation accepts every other annotation as an opaque string.
+	[(string & !~"^io\\.imgoci\\.(architecture|target|representation|role|compression|content\\.digest|content\\.size|filename)$")]: string
 }
 
 // #BasicToken is a basic token with a custom error for invalid values.
@@ -433,14 +363,14 @@ import (
 #ImageManifestMediaType: #ImageManifestMediaTypeConstraint |
 	error("file-entry descriptor mediaType must identify application/vnd.oci.image.manifest.v1+json")
 
-// #Title is a safe basename for decoded content with a custom error for invalid
-// values.
-#Title: #TitleConstraint |
-	error("title must be one safe path component matching ^[a-z0-9]([a-z0-9._+-]{0,253}[a-z0-9])?$")
+// #Filename is the producer-chosen filename for decoded content with a custom
+// error for invalid values.
+#Filename: #FilenameConstraint |
+	error("filename must be one path component matching ^[a-z0-9]([a-z0-9._+-]{0,253}[a-z0-9])?$")
 
-// #TitleConstraint is one safe path component containing 1 to 255 ASCII bytes
+// #FilenameConstraint is one path component containing 1 to 255 ASCII bytes
 // that match ^[a-z0-9]([a-z0-9._+-]{0,253}[a-z0-9])?$.
-#TitleConstraint: string & strings.MinRunes(1) & strings.MaxRunes(255) &
+#FilenameConstraint: string & strings.MinRunes(1) & strings.MaxRunes(255) &
 	=~"^[a-z0-9]([a-z0-9._+-]{0,253}[a-z0-9])?$"
 
 // #ReleaseVersion is a producer-assigned release version with a custom error for
