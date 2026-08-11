@@ -7,3 +7,4 @@
 | 003 | 2026-08-10 | Incus VM format and projection proof | complete | Proved an OCI-to-Incus projection and landed the minimal Incus VM model, with schema enforcement and final acceptance deferred. |
 | 004 | 2026-08-10 | Standard OCI file layout and BigOCI precedence | complete | Made single-layer OCI files the required default, exposed manifest type for pre-fetch capability filtering, and retained BigOCI as an optional multipart fallback. |
 | 005 | 2026-08-10 | OCI-native file manifest type descriptors | complete | Replaced the private manifest-type annotation with required OCI descriptor `artifactType` and merged the fully validated change in PR #9. |
+| 006 | 2026-08-10 | Public review corrections | in-progress | Apply the agreed review fixes across the specification, schema, fixtures, and supporting documentation, then open a validated pull request. |
