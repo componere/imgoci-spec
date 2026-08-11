@@ -18,8 +18,8 @@ mise exec -- cue vet -c -d '#ReleaseIndex' . path/to/index.json
 ```
 
 `#ReleaseIndex` checks the closed release-index and file-entry descriptor
-shapes, required annotations, file-manifest type syntax, media types, local
-value syntax, and these release-wide rules from Sections 5, 6, and 9:
+shapes, required annotations, descriptor artifact-type syntax, media types,
+local value syntax, and these release-wide rules from Sections 5, 6, and 9:
 
 - each architecture token has no more than 128 ASCII bytes;
 - decoded content size does not exceed `9223372036854775807`;
@@ -29,19 +29,19 @@ value syntax, and these release-wide rules from Sections 5, 6, and 9:
   size, and title;
 - different roles in one deliverable have different titles;
 - descriptors for one file manifest agree on media type, descriptor size,
-  manifest type, compression, content digest, and content size; and
+  artifact type, compression, content digest, and content size; and
 - file-entry descriptors use the canonical order.
 
 CUE validates a parsed value. It cannot inspect the original JSON bytes, fetch
 referenced objects, or observe repository state. RFC 8785 encoding, agreement
-between `io.imgoci.file.manifest-type` and a fetched manifest's `artifactType`,
-standard file-manifest and BigOCI validation, same-repository requirements,
-retrieval, decoding, and content verification remain separate conformance
-checks. CUE also cannot infer producer intent for public and private selector
-names, enforce the v1 producer choice between the two defined file-manifest
-types, or verify that `io.imgoci.name` stays stable across releases. It accepts
-unknown syntactically valid file-manifest types so consumers can preserve them
-during discovery.
+between a file-entry descriptor's `artifactType` and the fetched manifest's
+top-level `artifactType`, standard file-manifest and BigOCI validation,
+same-repository requirements, retrieval, decoding, and content verification
+remain separate conformance checks. CUE also cannot infer producer intent for
+public and private selector names, enforce the v1 producer choice between the
+two defined file-manifest types, or verify that `io.imgoci.name` stays stable
+across releases. It accepts unknown syntactically valid file-manifest types so
+consumers can preserve them during discovery.
 
 ## Generate the JSON Schema compatibility layer
 
