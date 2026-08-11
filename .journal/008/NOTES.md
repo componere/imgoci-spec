@@ -18,3 +18,8 @@ Next: Review the final diff, commit and push the feature branch, open a draft PR
 Committed the refactor as `6195f7dc9e2cc84676def1741cc31ccab2c1ed1a`, pushed `feat/simple-conformance-fixtures`, and opened draft PR #14: https://github.com/componere/imgoci-spec/pull/14. GitHub reports the PR mergeable with the exact pushed head, and hosted `Validate` passed in 15 seconds.
 
 Next: Await review; session 008 remains open for follow-up and eventual closeout.
+
+## 2026-08-11 09:57 — Close
+PR #14 was approved and squash-merged as `c71096d82d41cd488cc63705488af593fbeb6c31`. Local `master` was fast-forwarded, the feature worktree and local branch were removed with Worktrunk, and the leftover remote feature branch was deleted after `gh pr merge --delete-branch` completed the remote merge but hit the checked-out-base local cleanup conflict. Post-merge local Moon CI and hosted Validate and Release Please runs all passed.
+
+Handoff: The released corpus now consists of explicit complete release indexes under `conformance/v1/pass` and `conformance/v1/fail`, checked by `conformance/check.sh`; `scripts/check_cue.sh` retains schema and generated-projection checks without Python or uv. Byte-level and implementation behavior conformance remain intentionally deferred.
