@@ -111,8 +111,8 @@ import (
 					manifests: error("different roles in deliverable \(rightArchitecture), \(rightTarget), \(rightRepresentation) must have different titles")
 				}
 
-				if left.digest == right.digest && (left.mediaType != right.mediaType || left.size != right.size || leftCompression != rightCompression || left.annotations["io.imgoci.content.digest"] != right.annotations["io.imgoci.content.digest"] || left.annotations["io.imgoci.content.size"] != right.annotations["io.imgoci.content.size"]) {
-					manifests: error("descriptors for file manifest \(right.digest) must agree on media type, descriptor size, compression, content digest, and content size")
+				if left.digest == right.digest && (left.mediaType != right.mediaType || left.size != right.size || left.annotations["io.imgoci.file.manifest-type"] != right.annotations["io.imgoci.file.manifest-type"] || leftCompression != rightCompression || left.annotations["io.imgoci.content.digest"] != right.annotations["io.imgoci.content.digest"] || left.annotations["io.imgoci.content.size"] != right.annotations["io.imgoci.content.size"]) {
+					manifests: error("descriptors for file manifest \(right.digest) must agree on media type, descriptor size, manifest type, compression, content digest, and content size")
 				}
 
 				let leftOrderKey = "\(leftArchitecture)\u0000\(leftTarget)\u0000\(leftRepresentation)\u0000\(leftRole)\u0000\(leftCompression)"
@@ -236,6 +236,9 @@ import (
 	// io.imgoci.content.size is the byte length of decoded content when present.
 	"io.imgoci.content.size"?: #ContentSize
 
+	// io.imgoci.file.manifest-type identifies the file manifest layout when present.
+	"io.imgoci.file.manifest-type"?: #FileManifestType
+
 	[(string & !~"^io\\.imgoci\\.")]: string // Other OCI annotations have string values and must not use the reserved io.imgoci namespace.
 }
 
@@ -274,6 +277,9 @@ import (
 	// io.imgoci.content.size is the byte length of decoded content when present.
 	"io.imgoci.content.size"?: #ContentSizeConstraint
 
+	// io.imgoci.file.manifest-type identifies the file manifest layout when present.
+	"io.imgoci.file.manifest-type"?: #FileManifestTypeConstraint
+
 	[(string & !~"^io\\.imgoci\\.")]: string // Other OCI annotations have string values and must not use the reserved io.imgoci namespace.
 }
 
@@ -301,6 +307,9 @@ import (
 	// io.imgoci.content.size is the byte length of the decoded content, encoded as
 	// a string matching ^(0|[1-9][0-9]*)$.
 	"io.imgoci.content.size"!: #ContentSize
+
+	// io.imgoci.file.manifest-type identifies the file manifest layout.
+	"io.imgoci.file.manifest-type"!: #FileManifestType
 
 	// org.opencontainers.image.title is a safe basename for the decoded content.
 	"org.opencontainers.image.title"!: #Title
@@ -336,6 +345,9 @@ import (
 	// io.imgoci.content.size is the byte length of the decoded content, encoded as
 	// a string matching ^(0|[1-9][0-9]*)$.
 	"io.imgoci.content.size"!: #ContentSizeConstraint
+
+	// io.imgoci.file.manifest-type identifies the file manifest layout.
+	"io.imgoci.file.manifest-type"!: #FileManifestTypeConstraint
 
 	// org.opencontainers.image.title is a safe basename for the decoded content.
 	"org.opencontainers.image.title"!: #TitleConstraint
@@ -382,6 +394,15 @@ import (
 // #ReleaseIndex additionally caps its numeric value at 9223372036854775807.
 #ContentSizeConstraint: string & strings.MinRunes(1) & strings.MaxRunes(19) &
 	=~"^(0|[1-9][0-9]*)$"
+
+// #FileManifestType is an RFC 6838 media type with a custom error for invalid
+// values.
+#FileManifestType: #FileManifestTypeConstraint |
+	error("file manifest type must use RFC 6838 type/subtype restricted-name syntax with no more than 127 characters in each component")
+
+// #FileManifestTypeConstraint is an RFC 6838 type and subtype using restricted
+// names of no more than 127 ASCII characters each.
+#FileManifestTypeConstraint: string & =~"^[A-Za-z0-9][A-Za-z0-9!#$&^_.+-]{0,126}/[A-Za-z0-9][A-Za-z0-9!#$&^_.+-]{0,126}$"
 
 // #Title is a safe basename for decoded content with a custom error for invalid
 // values.

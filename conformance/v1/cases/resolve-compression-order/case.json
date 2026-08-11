@@ -1,7 +1,7 @@
 {
   "$schema": "../../../case.schema.json",
   "id": "resolve-compression-order",
-  "summary": "Resolution chooses the first accepted compression that exists rather than descriptor order.",
+  "summary": "Resolution removes unsupported manifest types, then applies compression preference rather than descriptor order.",
   "appliesTo": [
     "consumer"
   ],
@@ -17,8 +17,11 @@
       ],
       "acceptedCompressions": [
         "zstd",
-        "gzip",
-        "none"
+        "none",
+        "gzip"
+      ],
+      "supportedManifestTypes": [
+        "application/vnd.imgoci.file.v1"
       ]
     }
   },
@@ -26,6 +29,10 @@
     {
       "section": "7.3",
       "item": 7
+    },
+    {
+      "section": "7.3",
+      "item": 9
     }
   ],
   "expected": {

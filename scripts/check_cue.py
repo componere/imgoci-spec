@@ -144,6 +144,15 @@ def invalid_mutations() -> list[tuple[str, dict[str, Any]]]:
     value["manifests"][1]["digest"] = value["manifests"][0]["digest"]
     mutations.append(("inconsistent-shared-manifest", value))
 
+    value = copy.deepcopy(base)
+    shared = copy.deepcopy(value["manifests"][0])
+    shared["annotations"]["io.imgoci.architecture"] = "arm64"
+    shared["annotations"]["io.imgoci.file.manifest-type"] = (
+        "application/vnd.bigoci.file.v1"
+    )
+    value["manifests"].append(shared)
+    mutations.append(("inconsistent-shared-manifest-type", value))
+
     value = copy.deepcopy(alternatives)
     value["manifests"].reverse()
     mutations.append(("noncanonical-order", value))
@@ -159,6 +168,16 @@ def invalid_mutations() -> list[tuple[str, dict[str, Any]]]:
     value = copy.deepcopy(base)
     value["annotations"]["io.imgoci.future"] = "x"
     mutations.append(("reserved-annotation", value))
+
+    value = copy.deepcopy(base)
+    del value["manifests"][0]["annotations"]["io.imgoci.file.manifest-type"]
+    mutations.append(("missing-file-manifest-type", value))
+
+    value = copy.deepcopy(base)
+    value["manifests"][0]["annotations"]["io.imgoci.file.manifest-type"] = (
+        "application"
+    )
+    mutations.append(("malformed-file-manifest-type", value))
 
     return mutations
 
@@ -188,6 +207,31 @@ def check_fixture_matrix() -> None:
 
     with tempfile.TemporaryDirectory(prefix="imgoci-cue-cases-") as directory:
         temporary = Path(directory)
+
+        bigoci = load_index("valid-minimal")
+        bigoci["manifests"][0]["annotations"]["io.imgoci.file.manifest-type"] = (
+            "application/vnd.bigoci.file.v1"
+        )
+        bigoci_path = temporary / "accepted-bigoci-file-manifest.json"
+        write_index(bigoci_path, bigoci)
+        result = cue_vet(bigoci_path)
+        if result.returncode != 0:
+            raise CheckFailure(
+                f"CUE unexpectedly rejected accepted BigOCI file manifest:\n{result.stderr}"
+            )
+
+        unknown = load_index("valid-minimal")
+        unknown["manifests"][0]["annotations"]["io.imgoci.file.manifest-type"] = (
+            "application/vnd.example.file.v1"
+        )
+        unknown_path = temporary / "accepted-unknown-file-manifest.json"
+        write_index(unknown_path, unknown)
+        result = cue_vet(unknown_path)
+        if result.returncode != 0:
+            raise CheckFailure(
+                f"CUE unexpectedly rejected unknown file manifest type:\n{result.stderr}"
+            )
+
         for case_name, value in invalid_mutations():
             path = temporary / f"{case_name}.json"
             write_index(path, value)
