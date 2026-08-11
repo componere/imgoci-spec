@@ -19,3 +19,9 @@ Created `feat/public-review-followups` from clean `master` in its own Worktrunk 
 Updated CUE, regenerated JSON Schema, canonical fixtures, schema documentation, changelog, and focused checks. Added regressions for consumer-ignored members, misplaced known annotations, filename syntax and requiredness, and JSON Schema projection shape. The focused Moon gate passes. Independent checks confirm fixture canonical bytes, case metadata, declared JSON Schema outcomes, and both CUE and JSON Schema behavior for the new boundaries.
 
 The implementation preserves the prior decisions about descriptor `artifactType`, Incus metadata inspection, one-part BigOCI, compression framing, and the broader conformance harness.
+
+## 2026-08-11 07:45 — Pull request opened
+
+Committed the clean implementation as `2daf7c4` (`fix(spec): align consumer interoperability rules`) and pushed `feat/public-review-followups`. Opened ready PR #11: https://github.com/componere/imgoci-spec/pull/11.
+
+GitHub validated the exact PR head in Actions run `31503212034`; the `validate` job passed. The implementation worktree is clean. Session 007 remains in progress while the PR is open for review.
