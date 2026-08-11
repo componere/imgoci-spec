@@ -13,3 +13,8 @@ Plan: Create an isolated Worktrunk branch, migrate the normative text and machin
 Created `feat/oci-descriptor-artifact-type` from fetched `origin/master`. The specification now requires file-entry descriptor `artifactType`, explicitly follows the OCI Distribution manifest-type convention, removes `io.imgoci.file.manifest-type`, and preserves pre-fetch capability filtering plus retrieval-time equality checks.
 
 Updated the CUE schema, generated JSON Schema, exact-byte fixtures, schema/conformance documentation, changelog, and focused mutations. Added rejection coverage for the retired annotation. `mise exec -- moon run root:cue --summary minimal` passes, as does `git diff --check`.
+
+## 2026-08-10 20:41 — PR opened and green
+Committed the implementation as `eaf8c6d` (`feat(spec): use OCI descriptor artifact types`), pushed `feat/oci-descriptor-artifact-type`, and opened ready PR #9: https://github.com/componere/imgoci-spec/pull/9.
+
+GitHub Actions validation passed at the exact PR head. The implementation worktree is clean. Session 005 remains open for review follow-up or explicit closeout.
