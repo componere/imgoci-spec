@@ -7,7 +7,7 @@ specification controls.
 
 The CUE module is scoped to this directory as
 `github.com/componere/imgoci-spec/schema@v0`. It uses CUE v0.17.1 and enables
-the `explicitopen` experiment so closed structs translate predictably.
+the `explicitopen` experiment so object openness translates predictably.
 
 ## Validate a release index
 
@@ -18,9 +18,10 @@ mise exec -- cue vet -c -d '#ReleaseIndex' . path/to/index.json
 ```
 
 `#ReleaseIndex` models the rules that a consumer can apply to a parsed release
-index. It checks the closed release-index and file-entry descriptor shapes,
-required annotations, local syntax, case-insensitive media-type consistency,
-and these release-wide rules from Sections 5, 6, and 9:
+index. It checks required release-index and file-entry descriptor members while
+accepting consumer-ignored additional members. It also checks required
+annotations, local syntax, case-insensitive media-type consistency, and these
+release-wide rules from Sections 5, 6, and 9:
 
 - each architecture token has no more than 128 ASCII bytes;
 - decoded content size does not exceed `9223372036854775807`;
@@ -28,8 +29,8 @@ and these release-wide rules from Sections 5, 6, and 9:
 - `incus-vm` deliverables use the `incus` target;
 - a transport alternative tuple occurs only once;
 - transport alternatives for one file have the same content digest, content
-  size, and title;
-- different roles in one deliverable have different titles;
+  size, and filename;
+- different roles in one deliverable have different filenames;
 - descriptors for one file manifest have media and artifact types that compare
   equal without regard to letter case. They also agree on descriptor size,
   compression, content digest, and content size; and
@@ -42,14 +43,20 @@ top-level `artifactType`, file-manifest validation, same-repository
 requirements, retrieval, decoding, and content verification remain separate
 conformance checks.
 
-The schema does not enforce producer-only rules. These include public and
-private selector ownership, the reserved `io.imgoci.` namespace, lowercase
-producer media-type spelling, and whether an extension type has its own rules.
-It also cannot verify that `io.imgoci.name` stays stable across releases.
+Neither schema parses decoded content to verify representation-internal formats
+such as QCOW2, ECMA-119, or the Incus metadata archive. That format-specific
+validation is outside imgoci validation and retrieval.
+
+The schema does not enforce producer-only rules. These include fixed
+release-index and descriptor member sets, public and private selector
+ownership, the reserved `io.imgoci.` namespace, lowercase producer media-type
+spelling, and whether an extension type has its own rules. It also cannot
+verify that `io.imgoci.name` stays stable across releases.
 
 For consumer compatibility, CUE accepts unknown selector values, unknown
-annotation keys including `io.imgoci.` keys, and syntactically valid unknown
-file-manifest types.
+annotation keys including `io.imgoci.` keys, annotations used outside the
+object location where imgoci defines them, additional root and descriptor
+members, and syntactically valid unknown file-manifest types.
 
 ## Generate the JSON Schema compatibility layer
 

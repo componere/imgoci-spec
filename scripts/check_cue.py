@@ -100,6 +100,40 @@ def check_generated_schema() -> None:
             )
             raise CheckFailure(f"generated JSON Schema is stale:\n{diff}")
 
+        projection = json.loads(actual_bytes)
+        definitions = projection.get("$defs", {})
+        required_properties = {
+            "IndexAnnotationsShape": {
+                "io.imgoci.name",
+                "org.opencontainers.image.version",
+            },
+            "FileEntryAnnotationsShape": {
+                "io.imgoci.architecture",
+                "io.imgoci.target",
+                "io.imgoci.representation",
+                "io.imgoci.role",
+                "io.imgoci.compression",
+                "io.imgoci.content.digest",
+                "io.imgoci.content.size",
+                "io.imgoci.filename",
+            },
+        }
+        for definition_name, expected_properties in required_properties.items():
+            definition = definitions.get(definition_name, {})
+            properties = set(definition.get("properties", {}))
+            required = set(definition.get("required", []))
+            if not expected_properties <= properties or not expected_properties <= required:
+                raise CheckFailure(
+                    f"generated JSON Schema lost required {definition_name} properties"
+                )
+
+        for definition_name in ("ReleaseIndexShape", "FileEntryDescriptorShape"):
+            definition = definitions.get(definition_name, {})
+            if definition.get("additionalProperties") is not True:
+                raise CheckFailure(
+                    f"generated JSON Schema must accept additional {definition_name} properties"
+                )
+
 
 def load_index(case_id: str) -> dict[str, Any]:
     """Load a conformance release index as a mutable JSON value."""
@@ -122,7 +156,7 @@ def incus_vm_index(*, target: str = "incus") -> dict[str, Any]:
     disk_annotations["io.imgoci.target"] = target
     disk_annotations["io.imgoci.representation"] = "incus-vm"
     disk_annotations["io.imgoci.role"] = "disk"
-    disk_annotations["org.opencontainers.image.title"] = "disk.qcow2"
+    disk_annotations["io.imgoci.filename"] = "disk.qcow2"
 
     metadata = copy.deepcopy(disk)
     metadata["digest"] = (
@@ -133,7 +167,7 @@ def incus_vm_index(*, target: str = "incus") -> dict[str, Any]:
         "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
     )
     metadata_annotations["io.imgoci.role"] = "metadata"
-    metadata_annotations["org.opencontainers.image.title"] = "metadata.tar.xz"
+    metadata_annotations["io.imgoci.filename"] = "metadata.tar.xz"
     value["manifests"].append(metadata)
     return value
 
@@ -174,7 +208,7 @@ def invalid_mutations() -> list[tuple[str, dict[str, Any]]]:
     value = copy.deepcopy(alternatives)
     value["manifests"] = value["manifests"][:2]
     value["manifests"][1]["annotations"]["io.imgoci.role"] = "x-test-other"
-    mutations.append(("duplicate-role-title", value))
+    mutations.append(("duplicate-role-filename", value))
 
     value = copy.deepcopy(alternatives)
     value["manifests"][1]["digest"] = value["manifests"][0]["digest"]
@@ -198,6 +232,16 @@ def invalid_mutations() -> list[tuple[str, dict[str, Any]]]:
     value = copy.deepcopy(base)
     value["manifests"][0]["annotations"]["io.imgoci.content.size"] = "9223372036854775808"
     mutations.append(("oversized-content", value))
+
+    value = copy.deepcopy(base)
+    value["manifests"][0]["annotations"]["io.imgoci.filename"] = "not/a-filename"
+    mutations.append(("malformed-filename", value))
+
+    value = copy.deepcopy(base)
+    annotations = value["manifests"][0]["annotations"]
+    del annotations["io.imgoci.filename"]
+    annotations["org.opencontainers.image.title"] = "a"
+    mutations.append(("missing-filename-with-legacy-title", value))
 
     value = copy.deepcopy(base)
     del value["manifests"][0]["artifactType"]
@@ -286,6 +330,35 @@ def check_fixture_matrix() -> None:
         if result.returncode != 0:
             raise CheckFailure(
                 f"CUE unexpectedly rejected unknown imgoci annotations:\n{result.stderr}"
+            )
+
+        misplaced_annotations = load_index("valid-minimal")
+        misplaced_annotations["annotations"]["io.imgoci.architecture"] = "NOT VALID"
+        misplaced_annotations["manifests"][0]["annotations"]["io.imgoci.name"] = (
+            "NOT VALID"
+        )
+        misplaced_annotations["manifests"][0]["annotations"][
+            "org.opencontainers.image.title"
+        ] = "Human-readable title with spaces"
+        misplaced_annotations_path = temporary / "accepted-misplaced-annotations.json"
+        write_index(misplaced_annotations_path, misplaced_annotations)
+        result = cue_vet(misplaced_annotations_path)
+        if result.returncode != 0:
+            raise CheckFailure(
+                "CUE unexpectedly assigned imgoci meaning to annotations outside "
+                f"their defined object location:\n{result.stderr}"
+            )
+
+        additional_members = load_index("valid-minimal")
+        additional_members["x-extension"] = {"enabled": True}
+        additional_members["manifests"][0]["platform"] = {"architecture": "amd64"}
+        additional_members["manifests"][0]["urls"] = ["https://example.invalid/file"]
+        additional_members_path = temporary / "accepted-additional-members.json"
+        write_index(additional_members_path, additional_members)
+        result = cue_vet(additional_members_path)
+        if result.returncode != 0:
+            raise CheckFailure(
+                f"CUE unexpectedly rejected additional consumer-ignored members:\n{result.stderr}"
             )
 
         media_type_case = load_index("valid-minimal")

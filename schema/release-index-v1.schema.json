@@ -43,9 +43,9 @@
                     "description": "io.imgoci.content.size is the byte length of the decoded content, encoded as\na string matching ^(0|[1-9][0-9]*)$.",
                     "$ref": "#/$defs/ContentSizeConstraint"
                 },
-                "io.imgoci.name": {
-                    "description": "io.imgoci.name is a stable product identifier when present.",
-                    "$ref": "#/$defs/BasicTokenConstraint"
+                "io.imgoci.filename": {
+                    "description": "io.imgoci.filename is the producer-chosen filename for the decoded content.",
+                    "$ref": "#/$defs/FilenameConstraint"
                 },
                 "io.imgoci.representation": {
                     "description": "io.imgoci.representation is the deliverable representation selector.",
@@ -58,10 +58,6 @@
                 "io.imgoci.target": {
                     "description": "io.imgoci.target is the target selector.",
                     "$ref": "#/$defs/BasicTokenConstraint"
-                },
-                "org.opencontainers.image.title": {
-                    "description": "org.opencontainers.image.title is a safe basename for the decoded content.",
-                    "$ref": "#/$defs/TitleConstraint"
                 }
             },
             "required": [
@@ -69,16 +65,16 @@
                 "io.imgoci.compression",
                 "io.imgoci.content.digest",
                 "io.imgoci.content.size",
+                "io.imgoci.filename",
                 "io.imgoci.representation",
                 "io.imgoci.role",
-                "io.imgoci.target",
-                "org.opencontainers.image.title"
+                "io.imgoci.target"
             ]
         },
         "FileEntryDescriptorShape": {
             "type": "object",
-            "description": "#FileEntryDescriptorShape defines the closed file-entry descriptor and local\nfield constraints used by the JSON Schema projection.",
-            "additionalProperties": false,
+            "description": "#FileEntryDescriptorShape defines the file-entry descriptor and local\nfield constraints used by the JSON Schema projection.",
+            "additionalProperties": true,
             "properties": {
                 "annotations": {
                     "description": "annotations describes the file entry and its decoded content.",
@@ -109,6 +105,13 @@
                 "size"
             ]
         },
+        "FilenameConstraint": {
+            "type": "string",
+            "description": "#FilenameConstraint is one path component containing 1 to 255 ASCII bytes\nthat match ^[a-z0-9]([a-z0-9._+-]{0,253}[a-z0-9])?$.",
+            "maxLength": 255,
+            "minLength": 1,
+            "pattern": "^[a-z0-9]([a-z0-9._+-]{0,253}[a-z0-9])?$"
+        },
         "ImageManifestMediaTypeConstraint": {
             "type": "string",
             "description": "#ImageManifestMediaTypeConstraint identifies an OCI image manifest without\nregard to ASCII letter case using a pattern that is portable to JSON Schema.",
@@ -119,36 +122,8 @@
             "description": "#IndexAnnotationsShape defines release-index annotation constraints used by\nthe JSON Schema projection. The generator may omit constraints it cannot\nrepresent.",
             "additionalProperties": true,
             "properties": {
-                "io.imgoci.architecture": {
-                    "description": "io.imgoci.architecture is an architecture selector when present.",
-                    "$ref": "#/$defs/ArchitectureConstraint"
-                },
-                "io.imgoci.compression": {
-                    "description": "io.imgoci.compression is a decoder applied to a stored file when present.",
-                    "$ref": "#/$defs/BasicTokenConstraint"
-                },
-                "io.imgoci.content.digest": {
-                    "description": "io.imgoci.content.digest is a SHA-256 digest of decoded content when\npresent.",
-                    "$ref": "#/$defs/SHA256DigestConstraint"
-                },
-                "io.imgoci.content.size": {
-                    "description": "io.imgoci.content.size is the byte length of decoded content when present.",
-                    "$ref": "#/$defs/ContentSizeConstraint"
-                },
                 "io.imgoci.name": {
                     "description": "io.imgoci.name is the stable product identifier shared by all releases of\nthat product.",
-                    "$ref": "#/$defs/BasicTokenConstraint"
-                },
-                "io.imgoci.representation": {
-                    "description": "io.imgoci.representation is a deliverable representation selector when\npresent.",
-                    "$ref": "#/$defs/BasicTokenConstraint"
-                },
-                "io.imgoci.role": {
-                    "description": "io.imgoci.role is a file role when present.",
-                    "$ref": "#/$defs/BasicTokenConstraint"
-                },
-                "io.imgoci.target": {
-                    "description": "io.imgoci.target is a target selector when present.",
                     "$ref": "#/$defs/BasicTokenConstraint"
                 },
                 "org.opencontainers.image.version": {
@@ -191,8 +166,8 @@
         },
         "ReleaseIndexShape": {
             "type": "object",
-            "description": "#ReleaseIndexShape defines the closed release-index object and local field\nconstraints used by the JSON Schema projection.",
-            "additionalProperties": false,
+            "description": "#ReleaseIndexShape defines the release-index object and local field\nconstraints used by the JSON Schema projection.",
+            "additionalProperties": true,
             "properties": {
                 "annotations": {
                     "description": "annotations labels the release index with its stable product identifier and\nproducer-assigned release version. It may contain other OCI annotations.",
@@ -238,15 +213,8 @@
             "type": "string",
             "description": "#SHA256DigestConstraint is sha256: followed by 64 lowercase hexadecimal\ndigits.",
             "pattern": "^sha256:[0-9a-f]{64}$"
-        },
-        "TitleConstraint": {
-            "type": "string",
-            "description": "#TitleConstraint is one safe path component containing 1 to 255 ASCII bytes\nthat match ^[a-z0-9]([a-z0-9._+-]{0,253}[a-z0-9])?$.",
-            "maxLength": 255,
-            "minLength": 1,
-            "pattern": "^[a-z0-9]([a-z0-9._+-]{0,253}[a-z0-9])?$"
         }
     },
-    "description": "#ReleaseIndexJSONSchema is the best-effort JSON Schema compatibility\nprojection. It preserves the closed object shapes and local field constraints\nthat CUE can translate without weakening #ReleaseIndex.",
+    "description": "#ReleaseIndexJSONSchema is the best-effort JSON Schema compatibility\nprojection. It preserves the required object shapes and local field constraints\nthat CUE can translate without weakening #ReleaseIndex.",
     "$ref": "#/$defs/ReleaseIndexShape"
 }

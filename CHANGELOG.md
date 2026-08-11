@@ -35,6 +35,16 @@ This section records work completed before automated releases were enabled.
   consumer can remove unsupported formats before choosing a compression.
 - Replaced the private file-manifest-type annotation with the standard OCI
   descriptor `artifactType` field.
+- Made strict root, descriptor, and standard-manifest member sets producer
+  rules while consumers ignore additional members when interpreting objects.
+- Replaced the overloaded OCI title annotation with `io.imgoci.filename` for
+  decoded output names.
+- Limited defined annotation syntax to the object location where each
+  annotation is defined.
+- Required OCI Distribution media negotiation and response media-type checks,
+  and made tag pinning conditional on a tag reference.
+- Placed representation-internal content validation outside imgoci validation
+  and retrieval.
 
 ### Documentation
 
