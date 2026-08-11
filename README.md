@@ -34,10 +34,13 @@ repository revision; it does not transfer authority to another artifact.
 - [`CHANGELOG.md`](CHANGELOG.md) records changes to published artifacts.
 
 Passing CUE or JSON Schema validation alone does not establish conformance.
+The schemas model rules that a consumer can apply to a parsed release index.
+They do not establish producer conformance. Producer-only registry, namespace,
+and lowercase media-type spelling rules remain in `spec.md`.
+
 CUE checks more relationships between file entries than JSON Schema. Rules
-that depend on exact encoded bytes, referenced file manifests, selection, or
-retrieval remain defined by `spec.md` and may be exercised by the conformance
-corpus.
+that depend on exact encoded bytes, referenced objects, selection, or retrieval
+remain defined by `spec.md` and may be exercised by the conformance corpus.
 
 ## Validation
 

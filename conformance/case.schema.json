@@ -96,6 +96,7 @@
         },
         "acceptedCompressions": {
           "type": "array",
+          "description": "Compression decoders supported by the consumer, ordered from most preferred to least preferred.",
           "minItems": 1,
           "uniqueItems": true,
           "items": {
@@ -105,6 +106,7 @@
         },
         "supportedManifestTypes": {
           "type": "array",
+          "description": "File-manifest media types supported by the consumer. The corpus uses the lowercase standard spelling; consumers compare media types case-insensitively.",
           "minItems": 1,
           "uniqueItems": true,
           "contains": {
@@ -112,7 +114,7 @@
           },
           "items": {
             "type": "string",
-            "pattern": "^[A-Za-z0-9][A-Za-z0-9!#$&^_.+-]{0,126}/[A-Za-z0-9][A-Za-z0-9!#$&^_.+-]{0,126}$"
+            "pattern": "^[a-z0-9][a-z0-9!#$&^_.+-]{0,126}/[a-z0-9][a-z0-9!#$&^_.+-]{0,126}$"
           }
         }
       },

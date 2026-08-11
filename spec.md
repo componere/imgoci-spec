@@ -85,14 +85,18 @@ artifactType: application/vnd.imgoci.release.v1
                     +-- standard imgoci v1: one file layer
                     |
                     +-- BigOCI v1: two or more ordered parts
+                    |
+                    +-- another format supported by the consumer
 ~~~
 
 A release index must contain only imgoci file entries. It must not mix file
 entries with container images or compatibility descriptors.
 
-Every file entry emitted by an imgoci v1 producer must point to either a
-standard imgoci file manifest or a BigOCI File Format v1 manifest. A consumer
-must support the standard format. BigOCI support is optional.
+imgoci v1 directly defines the standard imgoci file manifest and the BigOCI
+File Format v1 manifest. A consumer must support the standard format. BigOCI
+support is optional. An imgoci addendum or private extension may define another
+file-manifest format. A producer may use it when its intended consumers support
+that format.
 
 The standard imgoci file manifest is the default. A producer should use it
 when the selected repository and delivery path can store and retrieve the
@@ -109,17 +113,24 @@ The producer chooses one file-manifest format for each transport alternative.
 The file-entry descriptor declares that format with its OCI `artifactType`
 member. This is capability metadata, not a selector. It does not change file or
 deliverable identity and does not permit two entries with the same selector
-tuple. A producer must set it to the exact top-level `artifactType` of the
-referenced manifest.
+tuple. A producer must set it to the same media type as the referenced
+manifest's top-level `artifactType`.
 
-imgoci follows the OCI Distribution Specification's artifact-discovery
-convention: descriptor `artifactType` repeats the referenced manifest's
-top-level `artifactType` when that member is present. Both file-manifest formats
-defined by imgoci v1 require that member, so imgoci does not fall back to the
-referenced manifest's config media type.
+OCI Image Specification v1.1.1 gives two related rules. Its generic descriptor
+text derives `artifactType` for an image manifest from the config media type.
+Its image-manifest guidance treats the top-level `artifactType` as the artifact
+type. OCI Distribution v1.1.1 also uses the top-level value first for referrer
+descriptors. imgoci uses this top-level-first rule for file-entry descriptors.
+For imgoci file entries, this rule controls where the OCI texts differ. Both
+file-manifest formats defined by imgoci v1 require a top-level `artifactType`,
+so the config fallback does not apply.
 
 The release index, file manifests, and blobs must be in the same OCI
 repository.
+
+An imgoci consumer must not reject a supported OCI object or descriptor because
+its `annotations` map contains an unknown key. Unknown annotation keys have no
+imgoci-defined meaning.
 
 A file-entry descriptor must not contain an OCI `platform` object.
 `io.imgoci.architecture` is the only architecture value used by this format.
@@ -129,8 +140,8 @@ define how a general OCI image client handles the index.
 ### 3.1 Standard file manifest
 
 A standard imgoci file manifest stores the complete stored file as one OCI
-blob. It must conform to the OCI image manifest and contain only these
-members:
+blob. It must conform to the OCI image manifest and contain these members. An
+imgoci producer must not add other top-level members:
 
 - `schemaVersion` with the number `2`;
 - `mediaType` with `application/vnd.oci.image.manifest.v1+json`;
@@ -138,8 +149,8 @@ members:
 - `config` with the OCI empty descriptor; and
 - `layers` with exactly one file-layer descriptor.
 
-The `config` member must identify the OCI empty descriptor with only these
-members:
+The `config` member must identify the OCI empty descriptor with these members.
+An imgoci producer must not add other members:
 
 ~~~json
 {
@@ -151,13 +162,19 @@ members:
 
 The referenced config blob contains the two bytes `{}`.
 
-The file-layer descriptor must contain only `mediaType`, `digest`, and
-`size`. Its `mediaType` must be `application/octet-stream`. Its `digest` must
-be `sha256:` followed by 64 lowercase hexadecimal digits. Its `size` must be a
-JSON integer from 0 through 9007199254740991.
+The file-layer descriptor must contain `mediaType`, `digest`, and `size`. An
+imgoci producer must not add other members. Its `mediaType` must be
+`application/octet-stream`. Its `digest` must be `sha256:` followed by 64
+lowercase hexadecimal digits. Its `size` must be a JSON integer from 0 through
+9007199254740991.
 
-The manifest, its config descriptor, and its file-layer descriptor must not
-contain other members. The complete member set is fixed, so a standard file
+A consumer must accept an OCI `annotations` member on the manifest, config
+descriptor, or file-layer descriptor. The member must map string keys to string
+values. Unknown annotation keys have no imgoci-defined meaning, but they affect
+the encoded bytes and manifest digest. A consumer must reject any unlisted
+member other than `annotations`.
+
+The producer member sets are fixed. A conforming producer's standard file
 manifest is a function of its layer digest and layer size alone. Section 9
 defines its canonical encoding.
 
@@ -183,6 +200,12 @@ those bytes are also the decoded content.
 `application/vnd.imgoci.release.v1` and `application/vnd.imgoci.file.v1` are
 the type identifiers defined by imgoci v1. The `.v1` suffix is the schema
 version. A breaking change requires a new type identifier.
+
+An imgoci producer must use the lowercase spellings defined in this document.
+A consumer must compare media types without regard to ASCII letter case. RFC
+6838 defines the type and subtype as case-insensitive. The media types accepted
+by this document do not contain parameters. All media-type comparisons in this
+document use this rule.
 
 Standard file manifests use the shape in section 3.1.
 BigOCI manifests use the media types and encoding defined by BigOCI File Format
@@ -233,8 +256,8 @@ A file-entry descriptor must contain only these members:
 
 The descriptor must not contain `data`, `platform`, or `urls`. `artifactType`
 declares the referenced manifest's top-level `artifactType` before the consumer
-fetches it. A producer must set the descriptor member to the exact value in the
-referenced manifest.
+fetches it. A producer must set it to the same media type as that top-level
+member.
 
 `digest` must be `sha256:` followed by 64 lowercase hexadecimal digits.
 
@@ -257,13 +280,15 @@ Every file-entry descriptor must contain these annotations:
 A missing or invalid required annotation makes the whole release index
 invalid.
 
-Other annotation keys are allowed on the release index and file-entry
-descriptors. Keys beginning with `io.imgoci.` are reserved for this
-specification. An imgoci v1 object must not use an undefined key in that
-namespace. Other annotations do not affect selection, but they affect the
-release-index digest. A producer that needs a reproducible digest should not
-add annotations whose values can differ across otherwise identical release
-indexes.
+Other annotation keys are allowed on release indexes and file-entry
+descriptors. The `io.imgoci.` namespace is reserved for this specification and
+its addenda. A producer must not emit a key in that namespace unless this
+specification or an addendum defines it. This is a producer rule. A consumer
+must not reject an object because it contains an unknown annotation key,
+including an unknown `io.imgoci.` key. Unknown annotations do not affect
+selection, but all annotations affect the release-index digest. A producer that
+needs a reproducible digest should not add annotations whose values can differ
+across otherwise identical release indexes.
 
 ### 5.3 Value syntax
 
@@ -289,25 +314,28 @@ hexadecimal digits.
 `io.imgoci.content.size` must be a string matching
 `^(0|[1-9][0-9]*)$`. Its value must not exceed 9223372036854775807.
 
-A file-entry descriptor's `artifactType` must contain a media type that
-conforms to RFC 6838. An imgoci v1 producer must use
-`application/vnd.imgoci.file.v1` or `application/vnd.bigoci.file.v1`. A
-consumer must preserve any other syntactically valid value during discovery
-and treat it as unsupported during resolution unless a supported addendum
-defines it.
+A file-entry descriptor's `artifactType` must contain an RFC 6838 type and
+subtype without parameters. imgoci v1 defines
+`application/vnd.imgoci.file.v1` and `application/vnd.bigoci.file.v1`. A
+imgoci addendum or private extension may define another syntactically valid
+value. A consumer must preserve every other syntactically valid value during
+discovery. During resolution, it treats a value as unsupported unless it
+supports that file-manifest format.
 
-Public selector values are append-only, and their meanings must not change.
-They are defined only in this specification or a later imgoci addendum. When a
-public value matches the producer's intended meaning, the producer must use it.
-The producer must not define a private synonym for that value. Other
-producer-defined selector values must use `x-<owner>-<name>`. This naming rule
-does not apply to `io.imgoci.name` or the release version.
+Public target, representation, role, and compression values are append-only.
+Their meanings must not change. These imgoci-owned values are defined only in
+this specification or a later imgoci addendum. Public architecture spellings
+come from OCI as described above. When a public selector value matches the
+producer's intended meaning, the producer must use it. The producer must not
+define a private synonym for that value. Other producer-defined selector values
+must use `x-<owner>-<name>`. This naming rule does not apply to
+`io.imgoci.name` or the release version.
 
-The public-value registry applies to producer conformance, not to consumer
-validation of selector values. A consumer must accept every syntactically valid
-value and compare values exactly. During discovery, it must preserve and return
-unknown values. An operation that must interpret an unknown value may report
-the value as unsupported.
+The imgoci-owned public-value registry applies to producer conformance, not to
+consumer validation of selector values. A consumer must accept every
+syntactically valid value and compare selector values exactly. During
+discovery, it must preserve and return unknown values. An operation that must
+interpret an unknown value may report the value as unsupported.
 
 imgoci v1 has no wildcard values. A query matches every value for a field only
 when it omits that field. A producer must not assign special wildcard meaning
@@ -329,9 +357,11 @@ compression.
 
 ### 5.4 Standard selector values
 
-The tables in this section define the initial public-value registry. A later
-compatible revision or addendum may add a public value without changing the
-release-index shape. A new public value must satisfy section 5.3.
+The tables in this section define the initial public values owned by imgoci for
+targets, representations, compression, and roles. Public architecture spellings
+come from OCI as described in section 5.3. A later compatible revision or
+addendum may add an imgoci-owned public value without changing the release-index
+shape. A new public value must satisfy section 5.3.
 
 #### Targets
 
@@ -417,6 +447,8 @@ stream, or frame. A decoder must consume the complete stored file. It must
 reject concatenated units, stream padding, skippable frames, and trailing
 bytes.
 
+A `zstd` stored file must not require a dictionary for decoding.
+
 #### Roles
 
 | Value | Meaning |
@@ -451,18 +483,21 @@ content. It must not select a different logical file.
 ## 6. Release validity
 
 A consumer must validate the complete release index before it selects a
-deliverable.
+deliverable. Consumer validation applies the structural, value, and cross-entry
+rules in this section. It does not apply requirements stated only for
+producers.
 
 Release-index validation checks file-entry descriptor `artifactType` syntax
-and cross-entry consistency without fetching referenced manifests. The
+and cross-entry consistency without fetching referenced manifests. It accepts
+unknown annotations and syntactically valid unknown file-manifest types. The
 consumer checks the declared type against each selected manifest during
 retrieval as required by section 8.
 
-The release index is invalid if any of these conditions is true:
+The release index is invalid for a consumer if any of these conditions is true:
 
-1. The root object does not satisfy section 5.1.
-2. A descriptor does not satisfy section 5.2.
-3. A required value does not satisfy section 5.3.
+1. The root object violates a consumer-validation requirement in section 5.1.
+2. A descriptor violates a consumer-validation requirement in section 5.2.
+3. A required value does not satisfy the syntax in section 5.3.
 4. A deliverable using a standard representation is missing a required role or
    uses a target forbidden by that representation in section 5.4.
 5. Two entries have the same
@@ -471,10 +506,14 @@ The release index is invalid if any of these conditions is true:
    content sizes, or titles.
 7. Two different roles in one deliverable have the same title.
 8. Two descriptors with the same file-manifest digest disagree on descriptor
-   media type, descriptor size, artifact type, compression, content digest, or
-   content size.
+   media type or artifact type under section 4, or disagree on descriptor size,
+   compression, content digest, or content size.
 9. The descriptor array is not in the canonical order defined in section 9.
 10. The index bytes are not in the canonical form defined in section 9.
+
+Producer-only requirements are not consumer-validation requirements. These
+include reserved annotation names, public selector naming, and lowercase media
+type spelling.
 
 Descriptors that share a file-manifest digest may differ in architecture,
 target, representation, role, and title. This allows one stored file to be
@@ -491,9 +530,10 @@ matches. It does not choose one.
 A consumer's supported file-manifest types are a capability set. The set must
 contain `application/vnd.imgoci.file.v1`. It contains
 `application/vnd.bigoci.file.v1` only when the consumer supports BigOCI. A
-supported addendum may add other values to the set. A consumer can compare this
-set with a file-entry descriptor's `artifactType` without fetching the
-referenced manifests.
+consumer may add any other file-manifest format it supports. A consumer can
+compare this set with a file-entry descriptor's `artifactType` without fetching
+the referenced manifests. That comparison follows the media-type rule in
+section 4.
 
 ### 7.1 Fetch the release
 
@@ -502,7 +542,9 @@ The caller supplies an OCI reference.
 Before fetching the release, a consumer must validate the query. Every query
 value must satisfy section 5.3. If present, a role list must be non-empty and
 must not contain duplicates. For a resolve query, the accepted-compression
-list must be non-empty and contain no duplicates.
+list must be non-empty and contain no duplicates. Every value in that list must
+name a compression that the consumer can decode. List order runs from most
+preferred to least preferred.
 
 A consumer must:
 
@@ -510,11 +552,17 @@ A consumer must:
 2. compute the SHA-256 digest of the exact response bytes;
 3. if the caller supplied a digest reference, require the computed digest to
    match the digest in that reference;
-4. if the registry provides a manifest digest, require that digest to match the
-   computed SHA-256 digest;
+4. if the registry sends a `Docker-Content-Digest` header, either ignore it or
+   verify it against the exact response bytes with the digest algorithm named
+   in its value;
 5. use the computed digest to pin a tag reference;
 6. validate the complete release index; and
 7. use digest references for all later fetches.
+
+The `Docker-Content-Digest` header may use an algorithm other than SHA-256. A
+consumer that uses the header must verify its value with that algorithm. It
+must not compare that value with the computed SHA-256 digest when the algorithms
+differ.
 
 Selection requires one release-index retrieval after registry authentication.
 It can require more than one network round trip.
@@ -551,8 +599,8 @@ deliverable with that representation.
 ### 7.3 Resolve one deliverable
 
 A resolve query must contain an exact architecture, target, and
-representation. It may contain a role list. It must contain a non-empty,
-ordered list of accepted compression values.
+representation. It may contain a role list. It must contain the
+accepted-compression list defined in section 7.1.
 
 A consumer must:
 
@@ -588,11 +636,9 @@ post-retrieval fallback.
 The producer does not mark one compression as preferred. Every transport
 alternative for a file has the same content digest, size, and title.
 
-Before decoding content, a consumer must stop if it does not support the
-selected compression. An operation that needs to interpret a representation or
-role may report the representation or role value as unsupported. A consumer may
-still list, mirror, or verify stored files whose selector values it does not
-understand.
+An operation that needs to interpret a representation or role may report the
+representation or role value as unsupported. A consumer may still list,
+mirror, or verify stored files whose selector values it does not understand.
 
 ## 8. Retrieval and verification
 
@@ -600,9 +646,9 @@ A consumer must fetch each selected file manifest by digest. It must verify the
 fetched manifest's SHA-256 digest against the file-entry descriptor digest and
 its byte length against the descriptor size.
 
-The consumer must require the manifest's top-level `artifactType` to equal the
-descriptor's `artifactType`. A mismatch is invalid producer output and fails
-the complete resolved result.
+The consumer must require the manifest's top-level `artifactType` and the
+descriptor's `artifactType` to identify the same media type under section 4. A
+mismatch is invalid producer output and fails the complete resolved result.
 
 The consumer must then inspect the manifest's `artifactType` and recover the
 stored file as follows:
@@ -616,9 +662,9 @@ stored file as follows:
    verify each part's digest and size, assemble them in manifest order, and
    verify the assembled digest and size as required by BigOCI. The assembled
    bytes are the stored file.
-3. For another syntactically valid value, use the rules from a supported
-   addendum or return `file manifest type not supported`. Reject a missing or
-   syntactically invalid `artifactType`.
+3. For another syntactically valid value, use the rules for that format when the
+   consumer supports it. Otherwise, return `file manifest type not supported`.
+   Reject a missing or syntactically invalid `artifactType`.
 
 After recovering the complete stored file, the consumer must:
 
@@ -644,11 +690,11 @@ not define network retries.
 ## 9. Deterministic encoding
 
 A producer must encode a standard imgoci file manifest with the JSON
-Canonicalization Scheme in RFC 8785. Section 3.1 fixes the complete member
-set, so the same stored file produces the same standard file manifest, byte
-for byte, and the same digest. The layer-size limit in section 3.1 and the
-descriptor-size limit in section 5.2 keep every number in these objects
-exactly representable under RFC 8785.
+Canonicalization Scheme in RFC 8785. Section 3.1 fixes the producer member set,
+so the same stored file produces the same standard file manifest, byte for
+byte, and the same digest. The layer-size limit in section 3.1 and the
+descriptor-size limit in section 5.2 keep every number in these objects exactly
+representable under RFC 8785.
 
 BigOCI file manifests use the canonical encoding defined by BigOCI File Format
 v1. imgoci must not add fields to them or re-encode them.
@@ -700,8 +746,10 @@ imgoci release.
 
 ## 12. Conformance
 
-A conforming producer must emit objects that satisfy this document. A
-conforming consumer must reject objects that do not satisfy it.
+A conforming producer must follow every producer requirement in this document.
+A conforming consumer must follow every consumer requirement. A producer-only
+requirement does not by itself make an otherwise valid object invalid for a
+consumer.
 
 Non-normative conformance artifacts may include a JSON Schema, positive
 fixtures, and negative fixtures. A JSON Schema can check structure and field
@@ -736,7 +784,7 @@ index and of the standard file manifest.
       "artifactType": "application/vnd.imgoci.file.v1",
       "digest": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
       "mediaType": "application/vnd.oci.image.manifest.v1+json",
-      "size": 812
+      "size": 427
     }
   ],
   "mediaType": "application/vnd.oci.image.index.v1+json",
@@ -791,7 +839,7 @@ alternatives.
 - [RFC 6838: Media Type Specifications and Registration Procedures](https://www.rfc-editor.org/rfc/rfc6838.html)
 - [BigOCI File Format v1](https://github.com/componere/bigoci/blob/v0.1.0/docs/docs/reference/format.md)
 - [RFC 1952: GZIP file format](https://www.rfc-editor.org/rfc/rfc1952.html)
-- [XZ file format](https://tukaani.org/xz/xz-file-format.txt)
+- [The .xz File Format, version 1.2.1](https://tukaani.org/xz/xz-file-format-1.2.1.txt)
 - [RFC 8878: Zstandard compression](https://www.rfc-editor.org/rfc/rfc8878.html)
 - [RFC 8785: JSON Canonicalization Scheme](https://www.rfc-editor.org/rfc/rfc8785.html)
 - [QEMU v11.0.3 QCOW2 Image File Format](https://gitlab.com/qemu-project/qemu/-/blob/v11.0.3/docs/interop/qcow2.rst)

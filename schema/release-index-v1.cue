@@ -18,12 +18,10 @@ import (
 	schemaVersion!: 2 | error("schemaVersion must be 2")
 
 	// mediaType identifies the object as an OCI image index.
-	mediaType!: "application/vnd.oci.image.index.v1+json" |
-		error("mediaType must be application/vnd.oci.image.index.v1+json")
+	mediaType: #ReleaseIndexMediaType
 
 	// artifactType identifies the object as an imgoci v1 release index.
-	artifactType!: "application/vnd.imgoci.release.v1" |
-		error("artifactType must be application/vnd.imgoci.release.v1")
+	artifactType: #ReleaseArtifactType
 
 	// manifests contains one file-entry descriptor for each transport
 	// alternative. It must contain at least one file-entry descriptor.
@@ -71,6 +69,18 @@ import (
 			}
 		}
 
+		// incus-vm is the only standard representation with a required target.
+		if representation == "incus-vm" {
+			if target != "incus" {
+				manifests: error("incus-vm deliverable \(architecture), \(target) must use target incus")
+			}
+			for requiredRole in ["disk", "metadata"] {
+				if len([for candidate in manifests if candidate.annotations["io.imgoci.architecture"] == architecture && candidate.annotations["io.imgoci.target"] == target && candidate.annotations["io.imgoci.representation"] == representation && candidate.annotations["io.imgoci.role"] == requiredRole {candidate}]) == 0 {
+					manifests: error("deliverable \(architecture), \(target), incus-vm must contain the \(requiredRole) role")
+				}
+			}
+		}
+
 		if representation == "pxe" {
 			for requiredRole in ["kernel", "initramfs", "rootfs"] {
 				if len([for candidate in manifests if candidate.annotations["io.imgoci.architecture"] == architecture && candidate.annotations["io.imgoci.target"] == target && candidate.annotations["io.imgoci.representation"] == representation && candidate.annotations["io.imgoci.role"] == requiredRole {candidate}]) == 0 {
@@ -111,7 +121,7 @@ import (
 					manifests: error("different roles in deliverable \(rightArchitecture), \(rightTarget), \(rightRepresentation) must have different titles")
 				}
 
-				if left.digest == right.digest && (left.mediaType != right.mediaType || left.size != right.size || left.artifactType != right.artifactType || leftCompression != rightCompression || left.annotations["io.imgoci.content.digest"] != right.annotations["io.imgoci.content.digest"] || left.annotations["io.imgoci.content.size"] != right.annotations["io.imgoci.content.size"]) {
+				if left.digest == right.digest && (strings.ToLower(left.mediaType) != strings.ToLower(right.mediaType) || left.size != right.size || strings.ToLower(left.artifactType) != strings.ToLower(right.artifactType) || leftCompression != rightCompression || left.annotations["io.imgoci.content.digest"] != right.annotations["io.imgoci.content.digest"] || left.annotations["io.imgoci.content.size"] != right.annotations["io.imgoci.content.size"]) {
 					manifests: error("descriptors for file manifest \(right.digest) must agree on media type, descriptor size, artifact type, compression, content digest, and content size")
 				}
 
@@ -137,10 +147,10 @@ import (
 	schemaVersion!: 2
 
 	// mediaType identifies the object as an OCI image index.
-	mediaType!: "application/vnd.oci.image.index.v1+json"
+	mediaType!: #ReleaseIndexMediaTypeConstraint
 
 	// artifactType identifies the object as an imgoci v1 release index.
-	artifactType!: "application/vnd.imgoci.release.v1"
+	artifactType!: #ReleaseArtifactTypeConstraint
 
 	// manifests contains one file-entry descriptor for each transport
 	// alternative. It must contain at least one file-entry descriptor.
@@ -152,12 +162,10 @@ import (
 }
 
 // #FileEntryDescriptor is one descriptor in the release index. It points to a
-// standard imgoci file manifest or a BigOCI File Format v1 manifest and adds
-// CUE validation errors for invalid local values.
+// file manifest and adds CUE validation errors for invalid local values.
 #FileEntryDescriptor: #FileEntryDescriptorShape & {
 	// mediaType identifies the referenced object as an OCI image manifest.
-	mediaType: "application/vnd.oci.image.manifest.v1+json" |
-		error("file-entry descriptor mediaType must be application/vnd.oci.image.manifest.v1+json")
+	mediaType: #ImageManifestMediaType
 
 	// digest is the SHA-256 digest of the referenced file manifest.
 	digest: #SHA256Digest
@@ -166,7 +174,7 @@ import (
 	size: #ManifestSize
 
 	// artifactType identifies the referenced file manifest's artifact type.
-	artifactType: #FileManifestType
+	artifactType: #MediaType
 
 	// annotations describes the file entry and its decoded content.
 	annotations: #FileEntryAnnotations
@@ -193,7 +201,7 @@ import (
 // field constraints used by the JSON Schema projection.
 #FileEntryDescriptorShape: {
 	// mediaType identifies the referenced object as an OCI image manifest.
-	mediaType!: "application/vnd.oci.image.manifest.v1+json"
+	mediaType!: #ImageManifestMediaTypeConstraint
 
 	// digest is the SHA-256 digest of the referenced file manifest.
 	digest!: #SHA256DigestConstraint
@@ -202,7 +210,7 @@ import (
 	size!: #ManifestSizeConstraint
 
 	// artifactType identifies the referenced file manifest's artifact type.
-	artifactType!: #FileManifestTypeConstraint
+	artifactType!: #MediaTypeConstraint
 
 	// annotations describes the file entry and its decoded content.
 	annotations!: #FileEntryAnnotationsShape
@@ -242,7 +250,8 @@ import (
 	// io.imgoci.content.size is the byte length of decoded content when present.
 	"io.imgoci.content.size"?: #ContentSize
 
-	[(string & !~"^io\\.imgoci\\.")]: string // Other OCI annotations have string values and must not use the reserved io.imgoci namespace.
+	// Consumer validation accepts every unknown annotation key.
+	[(string & !~"^(io\\.imgoci\\.(name|architecture|target|representation|role|compression|content\\.digest|content\\.size)|org\\.opencontainers\\.image\\.version)$")]: string
 }
 
 // #IndexAnnotationsShape defines release-index annotation constraints used by
@@ -280,7 +289,8 @@ import (
 	// io.imgoci.content.size is the byte length of decoded content when present.
 	"io.imgoci.content.size"?: #ContentSizeConstraint
 
-	[(string & !~"^io\\.imgoci\\.")]: string // Other OCI annotations have string values and must not use the reserved io.imgoci namespace.
+	// Consumer validation accepts every unknown annotation key.
+	[(string & !~"^(io\\.imgoci\\.(name|architecture|target|representation|role|compression|content\\.digest|content\\.size)|org\\.opencontainers\\.image\\.version)$")]: string
 }
 
 // #FileEntryAnnotations is the file-entry annotation map with CUE constraints
@@ -314,7 +324,8 @@ import (
 	// io.imgoci.name is a stable product identifier when present.
 	"io.imgoci.name"?: #BasicToken
 
-	[(string & !~"^io\\.imgoci\\.")]: string // Other OCI annotations have string values and must not use the reserved io.imgoci namespace.
+	// Consumer validation accepts every unknown annotation key.
+	[(string & !~"^(io\\.imgoci\\.(name|architecture|target|representation|role|compression|content\\.digest|content\\.size)|org\\.opencontainers\\.image\\.title)$")]: string
 }
 
 // #FileEntryAnnotationsShape defines file-entry annotation constraints used by
@@ -349,7 +360,8 @@ import (
 	// io.imgoci.name is a stable product identifier when present.
 	"io.imgoci.name"?: #BasicTokenConstraint
 
-	[(string & !~"^io\\.imgoci\\.")]: string // Other OCI annotations have string values and must not use the reserved io.imgoci namespace.
+	// Consumer validation accepts every unknown annotation key.
+	[(string & !~"^(io\\.imgoci\\.(name|architecture|target|representation|role|compression|content\\.digest|content\\.size)|org\\.opencontainers\\.image\\.title)$")]: string
 }
 
 // #BasicToken is a basic token with a custom error for invalid values.
@@ -389,14 +401,37 @@ import (
 #ContentSizeConstraint: string & strings.MinRunes(1) & strings.MaxRunes(19) &
 	=~"^(0|[1-9][0-9]*)$"
 
-// #FileManifestType is an RFC 6838 media type with a custom error for invalid
-// values.
-#FileManifestType: #FileManifestTypeConstraint |
-	error("file-entry descriptor artifactType must use RFC 6838 type/subtype restricted-name syntax with no more than 127 characters in each component")
+// #MediaType is an RFC 6838 media type with a custom error for invalid values.
+#MediaType: #MediaTypeConstraint |
+	error("media type must use RFC 6838 type/subtype restricted-name syntax with no more than 127 characters in each component")
 
-// #FileManifestTypeConstraint is an RFC 6838 type and subtype using restricted
-// names of no more than 127 ASCII characters each.
-#FileManifestTypeConstraint: string & =~"^[A-Za-z0-9][A-Za-z0-9!#$&^_.+-]{0,126}/[A-Za-z0-9][A-Za-z0-9!#$&^_.+-]{0,126}$"
+// #MediaTypeConstraint is an RFC 6838 type and subtype using restricted names
+// of no more than 127 ASCII characters each.
+#MediaTypeConstraint: string & =~"^[A-Za-z0-9][A-Za-z0-9!#$&^_.+-]{0,126}/[A-Za-z0-9][A-Za-z0-9!#$&^_.+-]{0,126}$"
+
+// #ReleaseIndexMediaTypeConstraint identifies an OCI image index without regard
+// to ASCII letter case using a pattern that is portable to JSON Schema.
+#ReleaseIndexMediaTypeConstraint: string & =~"^[aA][pP][pP][lL][iI][cC][aA][tT][iI][oO][nN]/[vV][nN][dD]\\.[oO][cC][iI]\\.[iI][mM][aA][gG][eE]\\.[iI][nN][dD][eE][xX]\\.[vV]1\\+[jJ][sS][oO][nN]$"
+
+// #ReleaseIndexMediaType adds a custom error to the portable constraint.
+#ReleaseIndexMediaType: #ReleaseIndexMediaTypeConstraint |
+	error("mediaType must identify application/vnd.oci.image.index.v1+json")
+
+// #ReleaseArtifactTypeConstraint identifies an imgoci v1 release without regard
+// to ASCII letter case using a pattern that is portable to JSON Schema.
+#ReleaseArtifactTypeConstraint: string & =~"^[aA][pP][pP][lL][iI][cC][aA][tT][iI][oO][nN]/[vV][nN][dD]\\.[iI][mM][gG][oO][cC][iI]\\.[rR][eE][lL][eE][aA][sS][eE]\\.[vV]1$"
+
+// #ReleaseArtifactType adds a custom error to the portable constraint.
+#ReleaseArtifactType: #ReleaseArtifactTypeConstraint |
+	error("artifactType must identify application/vnd.imgoci.release.v1")
+
+// #ImageManifestMediaTypeConstraint identifies an OCI image manifest without
+// regard to ASCII letter case using a pattern that is portable to JSON Schema.
+#ImageManifestMediaTypeConstraint: string & =~"^[aA][pP][pP][lL][iI][cC][aA][tT][iI][oO][nN]/[vV][nN][dD]\\.[oO][cC][iI]\\.[iI][mM][aA][gG][eE]\\.[mM][aA][nN][iI][fF][eE][sS][tT]\\.[vV]1\\+[jJ][sS][oO][nN]$"
+
+// #ImageManifestMediaType adds a custom error to the portable constraint.
+#ImageManifestMediaType: #ImageManifestMediaTypeConstraint |
+	error("file-entry descriptor mediaType must identify application/vnd.oci.image.manifest.v1+json")
 
 // #Title is a safe basename for decoded content with a custom error for invalid
 // values.
