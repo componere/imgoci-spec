@@ -38,3 +38,6 @@ Committed the amendment as `2bad70b` (`feat(spec): advertise file manifest capab
 
 ## 2026-08-10 19:13 — Pull request merged
 Squash-merged PR #7 into `master` as `0910eba7c9b30eb07edfd447425b5b7152837194` (`feat(spec): prefer single-layer OCI file manifests (#7)`). The merged tree exactly matches reviewed head `2bad70be8a899e40a7983fdbfbceacf085ca7e03`. Fast-forwarded the clean local `master` worktree to the merge commit. Post-merge Validate run 31451675842 and Release Please run 31451675862 both passed. Session 004 remains active pending an explicit close request.
+
+## 2026-08-10 19:46 — Close
+Session complete. PR #7 is merged as `0910eba7c9b30eb07edfd447425b5b7152837194`; local `master` is current, the implementation worktree and local/remote feature branches are removed, and post-merge Validate and Release Please runs passed. `SUMMARY.md` records the decisions and open pre-release work, while `TECH_NOTES.md` now carries the durable standard-layout and capability-filter contract.

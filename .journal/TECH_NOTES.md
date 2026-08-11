@@ -11,6 +11,12 @@
 - Release Please uses repository variable `COMPONERE_RELEASE_APP_CLIENT_ID` and Actions secret `COMPONERE_RELEASE_APP_PRIVATE_KEY`. The `componere-release-please` App installation requires contents, issues, and pull requests write permissions.
 - Draft specification versions use the `draft.N` prerelease series beginning at `v0.1.0-draft.1`. Merging a release PR creates the tag and draft GitHub release; the tag-triggered workflow waits for that draft, uploads the attested archive, and publishes it.
 
+## File manifest layouts
+
+- `application/vnd.imgoci.file.v1` is the required baseline: an OCI image manifest with the OCI empty config and exactly one `application/octet-stream` layer containing the complete stored file. BigOCI is optional, must contain at least two parts, and is reserved for stored bytes that cannot be handled reliably as one blob; v1 has no numeric threshold.
+- Every file entry declares the referenced manifest's top-level `artifactType` in `io.imgoci.file.manifest-type`. Do not use OCI descriptor `artifactType` for this because both layouts use the OCI empty config. Base-v1 producers use the imgoci or BigOCI value; consumers preserve other valid RFC 6838 media types during discovery.
+- Broad listing exposes every manifest type. Resolution removes unsupported types across all selected roles before applying compression preference. Retrieval requires the fetched top-level `artifactType` to match the annotation, and a mismatch fails the complete result without fallback. CUE checks syntax and same-digest consistency; fetched-object equality and layout validation remain external checks.
+
 ## Incus VM representation
 
 - An Incus VM release uses `target=incus`, `representation=incus-vm`, and coordinated `metadata` plus `disk` roles. The root disk is QCOW2 and remains outside the metadata archive.
