@@ -25,3 +25,10 @@ Validation passed with `mise exec -- moon run root:cue --summary minimal`; this 
 
 ## 2026-08-10 18:07 — Pull request opened
 Committed the targeted change as `bd619a1` (`feat(spec): prefer single-layer OCI file manifests`) on `feat/oci-file-layout` and opened https://github.com/componere/imgoci-spec/pull/7 as a ready pull request. GitHub's `validate` check passed on that exact head.
+
+## 2026-08-10 18:32 — Pre-fetch capability filtering added
+Review exposed a gap in the first PR revision: a standard-only consumer could discover a BigOCI manifest type only after selecting and fetching that manifest. This supersedes the earlier conclusion that the release-index wire shape needed no change.
+
+Each file-entry descriptor now requires `io.imgoci.file.manifest-type`, which declares the referenced manifest's top-level `artifactType`. Producers using base v1 choose the standard imgoci or BigOCI value. Consumer validation accepts other syntactically valid RFC 6838 media types so discovery remains forward-compatible; resolution removes unsupported types for every selected role before applying compression preference. Broad listing still exposes all alternatives. Fetching a selected manifest must confirm exact equality with the annotation, and a mismatch fails the complete result without fallback.
+
+CUE, generated JSON Schema, all fixtures, and focused mutations cover the required annotation, media-type syntax, BigOCI, an unknown valid type, missing and malformed values, and same-digest disagreement. The existing resolution case now proves that a standard-only consumer skips a preferred BigOCI alternative and selects the next supported compression. The repository gate, canonical fixture byte checks, conformance metadata schema validation, and `git diff --check` pass.
