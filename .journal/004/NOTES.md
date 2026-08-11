@@ -35,3 +35,6 @@ CUE, generated JSON Schema, all fixtures, and focused mutations cover the requir
 
 ## 2026-08-10 18:37 — Pull request amendment published
 Committed the amendment as `2bad70b` (`feat(spec): advertise file manifest capabilities`) and pushed it to PR #7. Corrected the PR description to replace the obsolete no-wire-change claim with the required annotation and capability-filter contract. GitHub's `validate` check passed on exact head `2bad70be8a899e40a7983fdbfbceacf085ca7e03`, and the PR is merge-clean.
+
+## 2026-08-10 19:13 — Pull request merged
+Squash-merged PR #7 into `master` as `0910eba7c9b30eb07edfd447425b5b7152837194` (`feat(spec): prefer single-layer OCI file manifests (#7)`). The merged tree exactly matches reviewed head `2bad70be8a899e40a7983fdbfbceacf085ca7e03`. Fast-forwarded the clean local `master` worktree to the merge commit. Post-merge Validate run 31451675842 and Release Please run 31451675862 both passed. Session 004 remains active pending an explicit close request.
