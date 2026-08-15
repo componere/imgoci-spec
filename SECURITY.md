@@ -3,7 +3,7 @@
 ## Reporting a vulnerability
 
 Report vulnerabilities privately through
-[GitHub private vulnerability reporting](https://github.com/componere/imgoci-spec/security/advisories/new).
+[GitHub private vulnerability reporting](https://github.com/imgoci/spec/security/advisories/new).
 
 Do not use public issues, pull requests, discussions, or other public channels
 for vulnerability reports.

@@ -29,11 +29,11 @@ Release Please maintains a release pull request from Conventional Commits on
    GitHub CLI:
 
    ```sh
-   gh release verify <tag> -R componere/imgoci-spec
-   gh release verify-asset <tag> <archive> -R componere/imgoci-spec
+   gh release verify <tag> -R imgoci/spec
+   gh release verify-asset <tag> <archive> -R imgoci/spec
    gh attestation verify <archive> \
-     -R componere/imgoci-spec \
-     --signer-workflow componere/imgoci-spec/.github/workflows/release.yml \
+     -R imgoci/spec \
+     --signer-workflow imgoci/spec/.github/workflows/release.yml \
      --source-ref refs/tags/<tag> \
      --deny-self-hosted-runners
    ```
@@ -41,11 +41,11 @@ Release Please maintains a release pull request from Conventional Commits on
 Manual dispatch of the release workflow is a rehearsal: it validates, packages,
 and attests an artifact without publishing a GitHub release.
 
-Release Please authenticates as the `componere-release-please` GitHub App so
+Release Please authenticates as the `imgoci-release-please` GitHub App so
 its tags trigger the publication workflow. The App installation requires
 `contents`, `issues`, and `pull requests` write permissions. The repository
-stores its client ID in `COMPONERE_RELEASE_APP_CLIENT_ID` and its private key in
-the `COMPONERE_RELEASE_APP_PRIVATE_KEY` Actions secret.
+stores its client ID in `IMGOCI_RELEASE_APP_CLIENT_ID` and its private key in
+the `IMGOCI_RELEASE_APP_PRIVATE_KEY` Actions secret.
 
 When the specification becomes stable, set `prerelease` to `false` in
 [`release-please-config.json`](release-please-config.json); the next release
