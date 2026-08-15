@@ -6,7 +6,7 @@ authority for the format. If the CUE schema and specification differ, the
 specification controls.
 
 The CUE module is scoped to this directory as
-`github.com/componere/imgoci-spec/schema@v0`. It uses CUE v0.17.1 and enables
+`github.com/imgoci/spec/schema@v0`. It uses CUE v0.17.1 and enables
 the `explicitopen` experiment so object openness translates predictably.
 
 ## Validate a release index

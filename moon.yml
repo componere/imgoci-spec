@@ -1,9 +1,9 @@
 project:
   title: 'imgoci-spec'
   description: 'Specification, schemas, and conformance cases for imgoci.'
-  owner: 'componere'
+  owner: 'imgoci'
   maintainers:
-    - 'componere'
+    - 'imgoci'
 
 # mise owns the tool versions; Moon only orchestrates them.
 toolchains:
