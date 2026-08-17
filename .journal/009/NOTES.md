@@ -77,3 +77,13 @@ Open gap for later: `GOVERNANCE.md` `Public-value registry` still lists only
 targets, representations, roles, and compression values, so a proposed `usage`
 value has no acceptance criteria. Left out of PR #18 because governance changes
 are non-trivial under that document's rules.
+
+## 2026-08-16 20:27 — PR #18 merged
+Squash-merged as `1cbf200` on `master`. Local `master` fast-forwarded, the
+`docs/readme-orientation` worktree and its local and remote branches are gone,
+and `git ls-files .journal` on `master` prints nothing.
+Post-merge workflows: Validate on `master` success, Release Please success.
+Release Please refreshed its PR #3, now proposing `0.1.0-draft.1` with the
+README change under Documentation. That release decision is still open.
+Remaining follow-up from this session: add `usage` to the `GOVERNANCE.md`
+public-value registry categories and define its acceptance criteria.
