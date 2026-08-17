@@ -140,5 +140,14 @@ Two new facts the rehearsal surfaced:
   commit `b3ccd4f` is GitHub-signed and verified. Release Please's
   `git.createRef refs/tags/v0.1.0` will therefore pass the ruleset.
 
-Next: decide whether to relax the tag ruleset briefly to delete the two
-rehearsal tags, then merge PR #3 to publish v0.1.0.
+## 2026-08-17 13:30 — Rehearsal tags removed, release on hold
+Cleaned up with maintainer approval: captured ruleset 20880519 to
+`/tmp/tagruleset-orig.json`, set enforcement `disabled`, deleted
+`refs/tags/vrehearsal-1` and `refs/tags/rehearsal-api-2`, then restored the
+original payload. Verified afterward: enforcement `active`, same four rules,
+zero bypass actors, `~ALL` conditions; `git ls-remote --tags origin` and
+`gh release list` are both empty again.
+
+Maintainer chose to hold the release. PR #3 (`chore(master): release 0.1.0`) is
+open, MERGEABLE, `validate` SUCCESS, awaiting their own review of the retitled
+PR and generated changelog. Nothing else is pending on my side.
