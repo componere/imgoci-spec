@@ -192,3 +192,13 @@ Noticed two stale remote branches unrelated to this session: `docs/governance`
 and `feat/canonical-file-manifest`.
 
 Next: PR #3 remains held for the maintainer.
+
+## 2026-08-17 14:10 — Stale branch cleanup
+Deleted the two outdated remote branches with maintainer approval. Both were
+squash-merged, so their tips were not ancestors of `master`; recorded here in
+case a tip is ever needed again:
+- `docs/governance` `a78f264` (2 commits, squash-merged as PR #4)
+- `feat/canonical-file-manifest` `e9ccd02` (1 commit, squash-merged as PR #8)
+
+Remaining remote heads: `master` `9638a9d`, `journal/jmgilman`, and the Release
+Please branch. Local worktrees: `master` and the journal root only.
