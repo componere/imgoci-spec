@@ -202,3 +202,34 @@ case a tip is ever needed again:
 
 Remaining remote heads: `master` `9638a9d`, `journal/jmgilman`, and the Release
 Please branch. Local worktrees: `master` and the journal root only.
+
+## 2026-08-17 14:20 — v0.1.0 published
+PR #3 squash-merged as `8083159`. The whole chain ran unattended:
+- Release Please run 32068742518 (success) pushed `refs/tags/v0.1.0` at
+  `8083159` and created the draft release.
+- That App-token tag push DID trigger `Release` (run 32068756636, tag
+  `v0.1.0`), which closes the one link the rehearsal could not prove. All three
+  jobs green; `publish` uploaded the archive and flipped the release public.
+
+Verified afterward:
+- Release `v0.1.0`: `draft:false`, `prerelease:false`, published
+  2026-08-17T21:00:07Z, asset `imgoci-spec-0.1.0.tar.gz` (41404 bytes,
+  sha256 `9c610fb2031893430e99c8061dec925f72c79ae7eb030743f129cfbed1b17ab0`).
+- `gh attestation verify --signer-workflow imgoci/spec/.github/workflows/release.yml`
+  passed: ref `refs/tags/v0.1.0`, digest `8083159`, runner `github-hosted`.
+- Archive contents: 8 root files including `Scope.md`, `Notices.md`,
+  `LICENSE-COMMUNITY-SPEC`, `GOVERNANCE.md`; `schema/`; `conformance/` with 43
+  fixtures; `spec.md` reading `Status: stable, 2026-08-17`.
+- Ran the published corpus straight out of the tarball: 14 passing and 29
+  failing indexes validated.
+- `git ls-remote --tags origin` shows exactly one tag, `v0.1.0` at `8083159`.
+
+New follow-up found while verifying: the archive ships `conformance/check.sh`
+and `schema/README.md`, whose commands are written as `mise exec -- ...`, but it
+does not ship `mise.toml` or `mise.lock`. Running `check.sh` from the extracted
+tarball picked up the host CUE v0.16.1 and failed with `language version
+"v0.17.1" ... too new`; it passed once the pinned v0.17.1 binary was on PATH.
+`schema/README.md:9` does state CUE v0.17.1, so this is a packaging nit, not a
+correctness problem. Options for a later release: ship `mise.toml`/`mise.lock`
+in the archive, or reword the archived commands to plain `cue` with a stated
+minimum version.
