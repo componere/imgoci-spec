@@ -19,6 +19,23 @@ made under the Community Specification License 1.0
 ([`LICENSE-COMMUNITY-SPEC`](LICENSE-COMMUNITY-SPEC)); contributions to every
 other artifact are dual licensed Apache-2.0 OR MIT.
 
+## Conventional Commits
+
+Use the `type(scope): subject` format for pull request titles. Pull requests are
+squash-merged, so the pull request title becomes the commit subject.
+
+Release Please groups these types in `CHANGELOG.md`:
+
+| Type | Changelog section |
+|---|---|
+| `feat` | Changes |
+| `fix` | Fixes |
+| `refactor` | Changes |
+| `docs` | Documentation |
+| `revert` | Reverts |
+
+Changes with the `ci` and `chore` types are not included in the changelog.
+
 ## Reporting a specification defect
 
 Use the specification-defect issue form for contradictory text, ambiguity,
@@ -57,19 +74,22 @@ change is derived.
 Before requesting review:
 
 1. Confirm that no normative requirement exists only outside `spec.md`.
-2. Run `mise trust --all`, then install the locked toolchain with
+2. Leave changes to normative text, the canonical schema, or governance open
+   for the public review window defined in
+   [`GOVERNANCE.md`](GOVERNANCE.md).
+3. Run `mise trust --all`, then install the locked toolchain with
    `mise install`.
-3. Run `mise exec -- moon run root:cue --summary minimal` from the repository
+4. Run `mise exec -- moon run root:cue --summary minimal` from the repository
    root. This checks CUE formatting and module state, validates every passing
    and failing fixture, and detects generated-schema drift.
-4. When intentionally changing the CUE projection, regenerate
+5. When intentionally changing the CUE projection, regenerate
    `release-index-v1.schema.json` as described in
    [`schema/README.md`](schema/README.md).
-5. Add a complete release index under `conformance/v1/pass` or
+6. Add a complete release index under `conformance/v1/pass` or
    `conformance/v1/fail` when changing parsed-value validation behavior.
-6. Update [`CHANGELOG.md`](CHANGELOG.md) when the change will affect a
-   publication.
-7. Ensure the CUE validation workflow passes.
+7. Do not edit [`CHANGELOG.md`](CHANGELOG.md) manually. Release Please
+   generates it from commit subjects, so write an accurate pull request title.
+8. Ensure the CUE validation workflow passes.
 
 Do not copy implementation-specific APIs, error strings, or Go data structures
 into the specification artifacts. Conformance expectations should be stated in

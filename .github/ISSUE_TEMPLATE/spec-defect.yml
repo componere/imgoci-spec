@@ -11,7 +11,7 @@ body:
     id: revision
     attributes:
       label: Specification revision
-      description: Provide a tag, commit, or state that this concerns the current draft.
+      description: Provide the published version tag or commit.
     validations:
       required: true
   - type: input

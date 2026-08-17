@@ -1,8 +1,9 @@
 # Releases
 
 An imgoci-spec release is an immutable publication of `spec.md` together with
-the schema and conformance artifacts at the same commit. The schema and corpus
-do not have independent release versions.
+the schema and conformance artifacts at the same commit, and the licensing and
+governance files that state the terms it is published under. The schema and
+corpus do not have independent release versions.
 
 Repository publication versions, the `.v1` imgoci artifact type, OCI
 `schemaVersion`, and releases of the Go implementation are separate version
@@ -12,8 +13,8 @@ axes. A repository tag does not change the wire-format identifier unless
 ## Preparing a release
 
 Release Please maintains a release pull request from Conventional Commits on
-`master`. While the specification remains a draft, it proposes versions with a
-`draft.N` prerelease suffix, beginning with `v0.1.0-draft.1`.
+`master` and proposes stable `vX.Y.Z` versions. The specification does not use a
+prerelease series.
 
 1. Land release-worthy changes on `master` using Conventional Commit subjects.
 2. Review the Release Please pull request, including its proposed version and
@@ -47,9 +48,11 @@ its tags trigger the publication workflow. The App installation requires
 stores its client ID in `IMGOCI_RELEASE_APP_CLIENT_ID` and its private key in
 the `IMGOCI_RELEASE_APP_PRIVATE_KEY` Actions secret.
 
-When the specification becomes stable, set `prerelease` to `false` in
-[`release-please-config.json`](release-please-config.json); the next release
-promotes the current draft to a stable version.
+`force-tag-creation` in
+[`release-please-config.json`](release-please-config.json) makes Release Please
+push the `v*` tag itself, which is what starts the publication workflow. `draft`
+keeps the GitHub release unpublished until that workflow attaches the attested
+archive; it does not mark the release a prerelease.
 
 Published tags must not be moved or replaced. Corrections are published from a
 new commit under a new tag.

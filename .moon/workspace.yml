@@ -9,6 +9,6 @@ vcs:
   defaultBranch: 'master'
   provider: 'github'
 
-# mise installs tools and uv resolves each self-contained Python script.
+# mise installs tools.
 pipeline:
   installDependencies: false

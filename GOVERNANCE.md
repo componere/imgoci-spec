@@ -10,7 +10,8 @@ informative project document. It does not change the authority order in
 The imgoci specification project, meaning this repository and its maintainers,
 is the Working Group for the purposes of the Community Specification License
 1.0 ([`LICENSE-COMMUNITY-SPEC`](LICENSE-COMMUNITY-SPEC)). The Working Group's
-scope is the imgoci release format: the specification in
+Scope for license purposes is defined in [`Scope.md`](Scope.md). In summary,
+the Working Group develops the imgoci release format: the specification in
 [`spec.md`](spec.md), its addenda, and its language-neutral validation
 artifacts.
 
@@ -33,35 +34,36 @@ bootstrap period are recorded in history like any other change.
 | `spec.md` and its addenda | Community Specification License 1.0 |
 | All other repository content (schema, conformance corpus, scripts, documentation, automation) | Apache-2.0 OR MIT, at your option |
 
-The specification text uses the Community Specification License because
-implementers need patent commitments from specification contributors, and code
-licenses do not clearly provide them for independent implementations. The
-machine-readable artifacts stay dual licensed so implementations can copy them
-into a codebase under either license.
+The Community Specification License defines patent grants and commitments from
+specification Contributors in sections 2.1 and 2.2 for Licensees that accept
+the License as section 2.1.3 specifies. Code licenses do not clearly provide
+those terms for independent implementations. The machine-readable artifacts
+stay dual licensed so implementations can copy them into a codebase under
+either license.
 
 Contributions follow the same split. A contribution to `spec.md` or an
 addendum is made under the Community Specification License 1.0. A contribution
 to any other artifact is dual licensed Apache-2.0 OR MIT.
 
-## Deliverable status
+## Specification status
 
-Under the Community Specification License:
-
-- a `draft.N` prerelease publication (see [`RELEASES.md`](RELEASES.md)) is a
-  Draft Deliverable; and
-- a stable, non-prerelease publication is an Approved Deliverable.
-
-Approval happens through the release process in `RELEASES.md` and is decided
-by the maintainers.
+Under the Community Specification License, every revision of the specification
+before the first stable tag, `v0.1.0`, is a Draft Specification. Tagging a
+stable, non-prerelease version through the release process in
+[`RELEASES.md`](RELEASES.md) designates that tagged publication as an Approved
+Specification under section 9.2. Approval is decided by the maintainers.
 
 ## Patent exclusion notices
 
-The Community Specification License defines a process for excluding
-identified patent claims from a contributor's licensing commitment. File a
-notice by opening a public issue and a pull request that records the notice in
-this section within the window the License defines.
+The Community Specification License defines an Exclusion Notice as a pull
+request or commit to [`Notices.md`](Notices.md) that identifies the excluded
+patents (section 9.7). A Contributor must file an Exclusion Notice within the
+applicable window in sections 3.1 and 3.2. The pre-approval window in section
+3.2 closes when the Draft Specification is adopted as an Approved
+Specification.
 
-No patent exclusion notices have been filed.
+`Notices.md` also records implementer acceptance notices under section 2.1.3.3
+and notices of withdrawal from the Working Group under section 2.3.
 
 ## Maintainers
 

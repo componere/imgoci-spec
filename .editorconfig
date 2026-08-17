@@ -13,6 +13,3 @@ indent_size = 2
 [*.md]
 indent_size = 2
 trim_trailing_whitespace = false
-
-[conformance/v1/cases/{valid-minimal,invalid-missing-annotation,invalid-duplicate-tuple,resolve-compression-order}/index.json]
-insert_final_newline = false
