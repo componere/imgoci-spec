@@ -67,3 +67,39 @@ Findings that matter:
 
 Next: get maintainer decisions on Scope.md wording, Notices.md, and untracking
 agent plumbing, then land the fixes in one PR before touching PR #3.
+
+## 2026-08-17 13:20 — PR #21 opened with the readiness fixes
+Maintainer decisions: add `Scope.md` and `Notices.md` now (wording to be
+reviewed), untrack the agent harness before the tag, and rehearse the tag
+trigger before the real release.
+
+Landed in worktree `.wt/chore-release-v0-1-0-readiness` (branch
+`chore/release-v0-1-0-readiness`), PR #21, `validate` green:
+- `release-please-config.json`: `initial-version` `0.1.0`; removed `versioning`,
+  `prerelease`, `prerelease-type`; kept `force-tag-creation` and `draft: true`;
+  added `refactor` to `changelog-sections`.
+- New root `Scope.md` and `Notices.md`; `GOVERNANCE.md` switched to CSL's
+  `Draft Specification`/`Approved Specification` and repointed notices at
+  `Notices.md`. All claims traced to CSL sections 2.1, 2.1.3.3, 2.2, 2.3, 3.1,
+  3.2, 9.2, 9.6, 9.7, 9.13.
+- `release.yml` archive now ships `GOVERNANCE.md`, `Scope.md`, `Notices.md`, and
+  `LICENSE-COMMUNITY-SPEC`; staging reproduced locally (8 root files + schema +
+  conformance, 43 fixtures).
+- `spec.md` `Status: stable, 2026-08-17` and `should not` added to the normative
+  keywords; README, RELEASES, CONTRIBUTING, SECURITY, PR/issue templates
+  de-drafted; new `.github/ISSUE_TEMPLATE/config.yml` disables blank issues.
+- Four new fail fixtures (`wrong-schema-version`, `missing-schema-version`,
+  `empty-manifests`, `missing-manifests`); gate now 14 pass / 29 fail, green.
+- Untracked `.agents/`, `.claude/`, `.session.md`, `AGENTS.md`, `CLAUDE.md` and
+  added them to `.gitignore`. Consequence: a fresh clone no longer carries the
+  session protocol; it stays on disk locally only.
+
+Correction to the earlier rehearsal plan: a hand-pushed `v0.0.1-rehearsal` tag
+does not test the App-token question, because pushes by a human always trigger
+workflows. It also leaves `publish` red, since `release.yml:101-118` polls for a
+draft release that only Release Please creates. A rehearsal that proves the
+publish path end to end needs a matching draft release created by hand.
+
+Next: maintainer reviews PR #21 wording, then merge #21, let Release Please
+retitle PR #3 to `release 0.1.0` and verify its manifest diff, optionally
+rehearse, then merge #3.
