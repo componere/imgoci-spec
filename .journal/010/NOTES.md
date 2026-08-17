@@ -151,3 +151,28 @@ zero bypass actors, `~ALL` conditions; `git ls-remote --tags origin` and
 Maintainer chose to hold the release. PR #3 (`chore(master): release 0.1.0`) is
 open, MERGEABLE, `validate` SUCCESS, awaiting their own review of the retitled
 PR and generated changelog. Nothing else is pending on my side.
+
+## 2026-08-17 13:55 — README implementations section
+Maintainer wanted `github.com/imgoci/go` linked as a canonical implementation.
+PR #21 had already added the link, but it sat under `## Implementation` at line
+193, below Repository contents and Validation.
+
+Pushed back on "canonical" and used "reference implementation" instead:
+`README.md:158,166-169` makes `spec.md` the sole normative authority and says
+implementation behavior yields to it, so "canonical" invites the opposite
+reading, and today it would be false given the five Go deviations the parity
+audit found. "One of the canonical implementations" is also self-contradictory.
+
+PR #22, `validate` green: lead paragraph now links the section, `##
+Implementation` becomes `## Implementations` as an extensible list, the section
+states that a disagreement is an implementation defect, and `imgoci/go` is
+described as a library and command-line tool (verified `cli/main.go` exists in a
+separate `cli/go.mod` module).
+
+Observed while checking the Go repo: its HEAD is `885feee` ("pin the new spec
+revision"), but `testdata/conformance/SPEC_COMMIT` still reads `46d18b74`, so the
+corpus pin is still behind spec `master`. Implementation-side follow-up, not this
+repo's work.
+
+Merging PR #22 refreshes release PR #3; it stays `release 0.1.0` and gains this
+entry under Documentation.
