@@ -23,5 +23,6 @@ Describe the checks performed.
 - [ ] No normative requirement exists only outside `spec.md`.
 - [ ] CUE, generated JSON Schema, conformance, and examples remain consistent with `spec.md`.
 - [ ] Exact-byte fixtures retain their intended canonical or non-canonical form.
-- [ ] `CHANGELOG.md` is updated when the change affects a publication.
+- [ ] The pull request title is an accurate Conventional Commit subject;
+  Release Please generates `CHANGELOG.md` from the resulting commit subject.
 - [ ] Security-sensitive details are not disclosed publicly.

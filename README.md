@@ -8,7 +8,7 @@ compressed. A consumer reads the index, picks the files it wants, fetches only
 those, and checks the decoded bytes against the digest and size the producer
 declared.
 
-The specification is a draft. [`spec.md`](spec.md) is the normative document.
+[`spec.md`](spec.md) is the normative document. The format is stable.
 
 ## The problem
 
@@ -192,13 +192,15 @@ same locked tools and runs the same Moon task.
 
 ## Implementation
 
-The canonical Go implementation is under development and is not yet public.
+The canonical Go implementation is public at
+[`github.com/imgoci/go`](https://github.com/imgoci/go).
 The specification repository does not depend on, execute, or generate normative
 material from that implementation.
 
 ## Contributing
 
-The format is a draft, so changes to normative text are still on the table.
+Normative changes follow the compatibility rules and public review window in
+[`GOVERNANCE.md`](GOVERNANCE.md), and public selector values are append-only.
 Useful contributions include implementation reports, review of `spec.md`
 against a real publishing or consuming workflow, new conformance fixtures, and
 proposals for public target, representation, usage, role, or compression
@@ -215,6 +217,9 @@ according to [`SECURITY.md`](SECURITY.md).
 The specification text ([`spec.md`](spec.md) and its addenda) is licensed
 under the Community Specification License 1.0
 ([`LICENSE-COMMUNITY-SPEC`](LICENSE-COMMUNITY-SPEC)).
+
+See [`Scope.md`](Scope.md) for the patent Scope and
+[`Notices.md`](Notices.md) for Exclusion Notices.
 
 All other repository content, including the schema, conformance corpus,
 scripts, and documentation, is licensed under either of

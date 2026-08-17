@@ -2,24 +2,22 @@
   "$schema": "https://raw.githubusercontent.com/googleapis/release-please/main/schemas/config.json",
   "release-type": "simple",
   "bootstrap-sha": "e01e41e43ab1950036ca28e7568a4b8ac9c0ce3e",
-  "initial-version": "0.1.0-draft.1",
+  "initial-version": "0.1.0",
   "include-v-in-tag": true,
   "include-component-in-tag": false,
   "force-tag-creation": true,
   "draft": true,
-  "versioning": "prerelease",
-  "prerelease": true,
   "bump-minor-pre-major": true,
   "packages": {
     ".": {
       "package-name": "imgoci-spec",
-      "changelog-path": "CHANGELOG.md",
-      "prerelease-type": "draft"
+      "changelog-path": "CHANGELOG.md"
     }
   },
   "changelog-sections": [
     { "type": "feat", "section": "Changes" },
     { "type": "fix", "section": "Fixes" },
+    { "type": "refactor", "section": "Changes" },
     { "type": "docs", "section": "Documentation" },
     { "type": "revert", "section": "Reverts" },
     { "type": "ci", "section": "Continuous Integration", "hidden": true },

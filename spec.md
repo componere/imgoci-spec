@@ -1,14 +1,15 @@
 # imgoci release format v1
 
-Status: draft, 2026-08-16
+Status: stable, 2026-08-17
 
 License: Community Specification License 1.0
 ([`LICENSE-COMMUNITY-SPEC`](LICENSE-COMMUNITY-SPEC)).
 
 This document defines the imgoci release format.
 
-The words `must`, `must not`, `should`, and `may` state requirements,
-prohibitions, recommendations, and permissions.
+The words `must`, `must not`, `should`, `should not`, and `may` state
+requirements, prohibitions, recommendations, discouraged behavior, and
+permissions.
 
 ## 1. Scope
 

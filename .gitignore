@@ -7,6 +7,9 @@
 .claude/
 .journal/
 .wt/
+.session.md
+AGENTS.md
+CLAUDE.md
 
 .moon/cache/
 .moon/docker/

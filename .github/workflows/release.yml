@@ -49,7 +49,16 @@ jobs:
           archive_root="imgoci-spec-${archive_version}"
           archive_name="${archive_root}.tar.gz"
           mkdir -p "dist/stage/${archive_root}"
-          cp README.md spec.md LICENSE-APACHE LICENSE-MIT "dist/stage/${archive_root}/"
+          cp \
+            README.md \
+            spec.md \
+            GOVERNANCE.md \
+            Scope.md \
+            Notices.md \
+            LICENSE-COMMUNITY-SPEC \
+            LICENSE-APACHE \
+            LICENSE-MIT \
+            "dist/stage/${archive_root}/"
           cp -R schema conformance "dist/stage/${archive_root}/"
 
           tar \

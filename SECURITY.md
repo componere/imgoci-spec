@@ -15,5 +15,5 @@ Include as much of the following as possible:
 - steps to reproduce or a minimal proof of concept; and
 - relevant logs, inputs, or suggested mitigations.
 
-This project has not yet published a supported-version policy or response-time
-commitment.
+Only the most recently published tag is supported; earlier tags receive no
+fixes. This project has not published a response-time commitment.
