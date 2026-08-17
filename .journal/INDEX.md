@@ -11,3 +11,4 @@
 | 007 | 2026-08-11 | Public review interoperability fixes | complete | Aligned tolerant consumer parsing, annotation and filename semantics, OCI Distribution retrieval, and payload-validation boundaries in merged PR #11. |
 | 008 | 2026-08-11 | Simplify conformance fixtures and harness | complete | Replaced dynamic Python checks and unused metadata with explicit pass/fail manifests and a shell harness in merged PR #14. |
 | 009 | 2026-08-16 | Session 009 | in-progress | Session primed; task to be defined by the user. |
+| 010 | 2026-08-17 | Session 010 | in-progress | Session primed; task to be defined by the user. |
