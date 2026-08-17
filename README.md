@@ -201,7 +201,8 @@ material from that implementation.
 The format is a draft, so changes to normative text are still on the table.
 Useful contributions include implementation reports, review of `spec.md`
 against a real publishing or consuming workflow, new conformance fixtures, and
-proposals for public target, representation, role, or compression values.
+proposals for public target, representation, usage, role, or compression
+values.
 
 See [`CONTRIBUTING.md`](CONTRIBUTING.md) for issue and pull-request guidance.
 [`GOVERNANCE.md`](GOVERNANCE.md) defines project decision making and the
