@@ -328,11 +328,12 @@ A basic token contains 1 to 128 ASCII bytes and must match:
 `target`, `representation`, `role`, and `compression` values must be basic
 tokens.
 
-A present `io.imgoci.usage` value contains one or more unique basic tokens
-joined by one ASCII comma with no whitespace. The tokens must appear in
-strictly ascending UTF-8 byte order, and the complete value must contain no
-more than 4096 ASCII bytes. The annotation must be omitted for the empty usage
-set. A present empty string is invalid.
+A present `io.imgoci.usage` value contains one or more unique basic tokens. If
+it contains more than one token, exactly one ASCII comma with no whitespace
+must separate each adjacent pair. The tokens must appear in strictly ascending
+UTF-8 byte order, and the complete value must contain no more than 4096 ASCII
+bytes. The annotation must be omitted for the empty usage set. A present empty
+string is invalid.
 
 An architecture value must contain either one basic token or two basic tokens
 separated by `/`. For a public first token, a producer must use the OCI Image
@@ -460,10 +461,10 @@ locations, and kernel command line are also outside this specification.
 The kernel may contain an embedded initramfs. An initramfs, whether embedded
 or separate, may provide the complete root filesystem.
 
-A producer must assign architecture, target, representation, usage, and role
-values that describe the decoded content and deliverable. When it uses a
-standard representation, the decoded content must have the form listed in the
-table.
+A producer must assign architecture, target, representation, and role values
+that describe the decoded content and deliverable. It must declare usage values
+as specified under Usage. When it uses a standard representation, the decoded
+content must have the form listed in the table.
 During imgoci validation and retrieval, a consumer verifies transport
 structure, decoding, size, and digest as specified in section 8. It is not
 required to parse decoded content to confirm the declared selectors, role, or
@@ -494,8 +495,8 @@ Usage values are capabilities and may be combined.
 
 | Value | Meaning |
 |---|---|
-| `live` | The deliverable can boot into a usable OS session without first installing the release onto a persistent destination. |
-| `install` | The deliverable can install the release onto a distinct persistent destination. |
+| `live` | The deliverable can boot and run an OS session without first installing the release on persistent storage. |
+| `install` | The deliverable can install the release on persistent storage separate from the source used to run the installer. |
 | `install-offline` | The deliverable can complete the producer-defined baseline installation while network connectivity is unavailable. |
 
 A producer must declare every standard usage value that applies to a
@@ -503,11 +504,11 @@ deliverable. `install-offline` requires `install`; both values must appear in
 the serialized usage set. A consumer must reject a usage set that contains
 `install-offline` without `install`.
 
-The producer-defined baseline excludes optional updates, registration, and
-activation. If the producer requires one of those operations to complete the
-installation, it is part of the baseline. Usage values apply independently of
-representation. A preinstalled disk image is not `live` solely because it can
-boot without an installation step.
+The baseline includes every update, registration, or activation that the
+producer requires to complete installation. It excludes optional instances of
+those operations. Usage values apply independently of representation. A
+preinstalled disk image is not `live` solely because it can boot without an
+installation step.
 
 Usage values are producer assertions. imgoci validation and retrieval do not
 execute the deliverable or prove that it has the asserted behavior.
@@ -685,7 +686,7 @@ A list query may contain:
 - architecture;
 - target;
 - representation;
-- one or more required usage values; and
+- one or more usage values that each result must contain; and
 - one or more roles.
 
 Every supplied scalar value is an exact, case-sensitive filter. An omitted
@@ -966,9 +967,9 @@ and three roles:
 
 | Architecture | Target | Representation | Usage | Role |
 |---|---|---|---|---|
-| `amd64` | `metal` | `linux-netboot` | empty | `kernel` |
-| `amd64` | `metal` | `linux-netboot` | empty | `initramfs` |
-| `amd64` | `metal` | `linux-netboot` | empty | `rootfs` |
+| `amd64` | `metal` | `linux-netboot` | empty set | `kernel` |
+| `amd64` | `metal` | `linux-netboot` | empty set | `initramfs` |
+| `amd64` | `metal` | `linux-netboot` | empty set | `rootfs` |
 
 Each row is a separate file entry. The `kernel` role is required. The
 `initramfs` and `rootfs` roles are optional. Each role may have one or more

@@ -60,7 +60,7 @@
                     "$ref": "#/$defs/BasicTokenConstraint"
                 },
                 "io.imgoci.usage": {
-                    "description": "io.imgoci.usage is the optional canonical set of deliverable usage values.",
+                    "description": "io.imgoci.usage optionally serializes a deliverable usage set. This\nprojection checks non-empty comma-separated token syntax and the 4096-byte\nlimit; it does not check canonical order, uniqueness, or the\ninstall-offline dependency on install.",
                     "$ref": "#/$defs/UsageConstraint"
                 }
             },

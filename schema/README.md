@@ -25,8 +25,8 @@ release-wide rules from Sections 5, 6, and 9:
 
 - each architecture token has no more than 128 ASCII bytes;
 - decoded content size does not exceed `9223372036854775807`;
-- usage sets use canonical token order and `install-offline` requires
-  `install`;
+- serialized usage values use canonical token order, and `install-offline`
+  requires `install`;
 - standard representations contain their required roles in each exact usage
   set;
 - `incus-vm` deliverables use the `incus` target;
