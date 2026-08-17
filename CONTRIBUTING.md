@@ -35,7 +35,7 @@ impact before preparing a large change.
 ## Proposing a public selector value
 
 Use the public-value issue form to propose a new target, representation,
-role, or compression value for the section 5.4 registry. The acceptance
+usage, role, or compression value for the section 5.4 registry. The acceptance
 criteria are in [`GOVERNANCE.md`](GOVERNANCE.md). Private `x-<owner>-<name>`
 values need no proposal.
 

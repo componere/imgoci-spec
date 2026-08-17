@@ -5,8 +5,8 @@ body:
   - type: markdown
     attributes:
       value: |
-        Use this form to propose a public target, representation, role, or
-        compression value. The registry policy in GOVERNANCE.md defines the
+        Use this form to propose a public target, representation, usage, role,
+        or compression value. The registry policy in GOVERNANCE.md defines the
         acceptance criteria. An `x-<owner>-<name>` value needs no proposal.
   - type: dropdown
     id: kind
@@ -15,6 +15,7 @@ body:
       options:
         - target
         - representation
+        - usage
         - role
         - compression
     validations:
@@ -33,9 +34,11 @@ body:
       description: >
         For a target: the environment family and the boot or import difference
         that architecture and representation do not express. For a
-        representation: the decoded form and its exact role set. For a role:
-        the purpose of the file in a deliverable. For a compression value: the
-        decoder behavior.
+        representation: the decoded form and its exact role set. For a usage
+        value: the capability a producer asserts about a complete deliverable,
+        and every required or excluded relationship with existing usage
+        values. For a role: the purpose of the file in a deliverable. For a
+        compression value: the decoder behavior.
     validations:
       required: true
   - type: textarea
@@ -65,6 +68,17 @@ body:
         publish, deliverables using this value.
     validations:
       required: true
+  - type: textarea
+    id: adoption
+    attributes:
+      label: Adoption by existing publishers
+      description: >
+        Required for a usage value. Producers must declare every standard
+        usage value that applies, and the usage set is part of the deliverable
+        key, so state how existing publishers are expected to adopt this value
+        and what it means for releases they have already published.
+    validations:
+      required: false
   - type: textarea
     id: notes
     attributes:

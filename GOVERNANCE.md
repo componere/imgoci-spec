@@ -112,9 +112,9 @@ of all other maintainers.
 ## Public-value registry
 
 `spec.md` section 5.4 defines the public selector values: targets,
-representations, roles, and compression values. The registry grows by
-addendum under this policy, which follows the specification-required model of
-[RFC 8126](https://www.rfc-editor.org/rfc/rfc8126.html).
+representations, usage values, roles, and compression values. The registry
+grows by addendum under this policy, which follows the specification-required
+model of [RFC 8126](https://www.rfc-editor.org/rfc/rfc8126.html).
 
 A proposal uses the public-value issue form and must show:
 
@@ -125,10 +125,23 @@ A proposal uses the public-value issue form and must show:
      difference that architecture and representation do not express.
    - A representation defines its decoded form with a stable, publicly
      available normative reference, and its exact role set.
+   - A usage value names a capability that a producer asserts about a complete
+     deliverable rather than a property of its representation or target. The
+     definition must be specific enough for a producer to decide whether the
+     value applies, because imgoci validates usage syntax and set
+     relationships but never proves the asserted behavior. The proposal must
+     state every required or excluded relationship with existing usage values,
+     as `install-offline` requires `install`.
    - A role defines the purpose of one file in a deliverable.
    - A compression value defines its decoder with a normative reference.
 4. **Use.** At least one producer publishes, or concretely intends to
    publish, deliverables using the value.
+
+A usage proposal carries an obligation the other categories do not. `spec.md`
+section 5.4 requires a producer to declare every standard usage value that
+applies to a deliverable, and the usage set is part of the deliverable key. A
+usage proposal must therefore state how existing publishers are expected to
+adopt the value and what that means for releases they have already published.
 
 The maintainers act as the designated experts. An accepted value lands as a
 compatible addendum through a normal pull request and release. Public values
