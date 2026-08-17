@@ -103,3 +103,42 @@ publish path end to end needs a matching draft release created by hand.
 Next: maintainer reviews PR #21 wording, then merge #21, let Release Please
 retitle PR #3 to `release 0.1.0` and verify its manifest diff, optionally
 rehearse, then merge #3.
+
+## 2026-08-17 13:10 — PR #21 merged and full-path rehearsal
+PR #21 squash-merged as `b3ccd4f`; `master` fast-forwarded. `gh pr merge` failed
+during local cleanup again (`master` checked out in another worktree) after the
+remote merge succeeded — same lesson as session 008.
+
+Gotcha worth remembering: the ff-merge deleted the untracked-by-design harness
+files from the main checkout, because they were still tracked there. Restored
+with `git checkout a0e61fd -- .agents .claude .session.md AGENTS.md CLAUDE.md`
+followed by `git restore --staged`, so they now sit on disk as ignored files.
+
+Release Please retitled PR #3 to `chore(master): release 0.1.0`, its manifest
+diff writes `".": "0.1.0"`, and the generated changelog now includes the
+`refactor` entry (#14) that the added changelog section unhid.
+
+Rehearsal used tag `vrehearsal-1` (non-semver suffix so Release Please cannot
+read it as a version) plus a hand-created draft release:
+- Release run 32063657510 succeeded end to end: validate, package, attest,
+  publish. The release ended `draft:false`, `prerelease:false`, with
+  `imgoci-spec-rehearsal-1.tar.gz` attached.
+- `gh attestation verify --signer-workflow imgoci/spec/.github/workflows/release.yml`
+  passed: `sourceRepositoryDigest b3ccd4f`, `ref refs/tags/vrehearsal-1`,
+  `runnerEnvironment github-hosted`.
+- Published archive contains the 8 root files (including `Scope.md`,
+  `Notices.md`, `LICENSE-COMMUNITY-SPEC`, `GOVERNANCE.md`), `schema/`,
+  `conformance/` with 43 fixtures, and `spec.md` reading `Status: stable`.
+
+Two new facts the rehearsal surfaced:
+- Ruleset `Default tags` (id 20880519) covers `~ALL` tags with `update`,
+  `deletion`, `required_signatures`, and `non_fast_forward`, and has no bypass
+  actors. Tag deletion is therefore refused, so `vrehearsal-1` and the
+  `rehearsal-api-2` probe tag cannot be removed without relaxing the ruleset.
+- The probe answered the real question: a lightweight tag ref created through
+  the API, with no signature of its own, is accepted because the target squash
+  commit `b3ccd4f` is GitHub-signed and verified. Release Please's
+  `git.createRef refs/tags/v0.1.0` will therefore pass the ruleset.
+
+Next: decide whether to relax the tag ruleset briefly to delete the two
+rehearsal tags, then merge PR #3 to publish v0.1.0.
