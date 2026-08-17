@@ -375,9 +375,9 @@ imgoci v1 has no wildcard values. A query matches every value for a field only
 when it omits that field. A producer must not assign special wildcard meaning
 to `any`, `*`, or another token.
 
-To classify one file for more than one architecture or target, a producer emits
-one descriptor for each value. Those descriptors may share one file-manifest
-digest.
+To classify one file for more than one deliverable, such as two architectures,
+two targets, or two usage sets, a producer emits one descriptor for each
+deliverable. Those descriptors may share one file-manifest digest.
 
 A filename must match:
 
@@ -602,8 +602,8 @@ include fixed producer member sets, reserved annotation names, public selector
 naming, and lowercase media-type spelling.
 
 Descriptors that share a file-manifest digest may differ in architecture,
-target, representation, role, and filename. This allows one stored file to be
-classified for more than one deliverable without copying it.
+target, representation, usage, role, and filename. This allows one stored file
+to be classified for more than one deliverable without copying it.
 
 If an index is invalid, a consumer must reject the entire index. It must not
 ignore an invalid entry and continue with the remaining entries.
