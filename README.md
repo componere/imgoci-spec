@@ -1,48 +1,159 @@
-# imgoci specification
+# imgoci
 
-This repository contains the imgoci release format specification and its
-language-neutral validation artifacts. The format describes releases of OS
-image files stored in an OCI repository.
+imgoci is a format for publishing operating-system images in an OCI registry.
+One release is one OCI image index. Each descriptor in that index says what its
+file is: the CPU architecture, the environment it was built for, the form it
+takes, its role in the deliverable, and how it is compressed. A consumer reads
+the index, picks the files it wants, fetches only those, and checks the decoded
+bytes against the digest and size the producer declared.
 
-The specification is currently a draft.
+The specification is a draft. [`spec.md`](spec.md) is the normative document.
 
-## Authority
+## The problem
 
-| Artifact | Status |
+An OS product does not ship one artifact. It ships a matrix: qcow2 disks for
+QEMU, raw disks for cloud imports, ISOs for installers, kernel and initramfs
+pairs for network boot, split metadata and disk pairs for Incus, each per
+architecture, often in several compressions. Those files are usually served
+from a directory tree over HTTP and described, if at all, by an
+ecosystem-specific catalog or by convention in the filenames. Consumers end up
+parsing names, hardcoding paths, and verifying checksums out of band.
+
+OCI registries already solve the storage half of that problem: content
+addressing, digests, mirroring, garbage collection, and authentication. What
+OCI does not define is which file is which. An OCI image index describes
+container images, and its `platform` object carries only OS and architecture.
+Nothing in it separates a qcow2 built for QEMU from a raw disk built for AWS,
+marks a kernel as belonging with a specific initramfs, or says that the zstd
+and xz entries are two encodings of the same content.
+
+imgoci defines that description layer and stops there. It adds an
+`artifactType` and a fixed set of annotations to an ordinary OCI image index,
+so an OS release can be stored, mirrored, and pulled by digest through the
+registry a project already runs.
+
+## What a release looks like
+
+```text
+release tag or digest
+        |
+        v
+OCI image index
+artifactType: application/vnd.imgoci.release.v1
+        |
+        +-- one descriptor for each transport alternative
+                    |
+                    v
+             file manifest
+                    |
+                    +-- standard imgoci v1: one file layer
+                    |
+                    +-- BigOCI v1: two or more ordered parts
+```
+
+A release index with a single entry, pretty-printed, with placeholder digests:
+
+```json
+{
+  "annotations": {
+    "io.imgoci.name": "exampleos",
+    "org.opencontainers.image.version": "42.1"
+  },
+  "artifactType": "application/vnd.imgoci.release.v1",
+  "manifests": [
+    {
+      "annotations": {
+        "io.imgoci.architecture": "amd64",
+        "io.imgoci.compression": "xz",
+        "io.imgoci.content.digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "io.imgoci.content.size": "8589934592",
+        "io.imgoci.filename": "exampleos-42.1.qcow2",
+        "io.imgoci.representation": "qcow2",
+        "io.imgoci.role": "disk",
+        "io.imgoci.target": "qemu"
+      },
+      "artifactType": "application/vnd.imgoci.file.v1",
+      "digest": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+      "mediaType": "application/vnd.oci.image.manifest.v1+json",
+      "size": 427
+    }
+  ],
+  "mediaType": "application/vnd.oci.image.index.v1+json",
+  "schemaVersion": 2
+}
+```
+
+Four annotations do the addressing work. `io.imgoci.architecture`,
+`io.imgoci.target`, and `io.imgoci.representation` identify a deliverable, such
+as an `amd64` `qcow2` disk set for `qemu`. `io.imgoci.role` identifies one file
+inside it, such as `disk`, `kernel`, `initramfs`, `metadata`, or `rootfs`.
+Entries that agree on all four are the same file stored differently, and
+`io.imgoci.compression` distinguishes them. Every one of those alternatives
+declares the same `io.imgoci.content.digest` and `io.imgoci.content.size`,
+because they decode to identical bytes.
+
+The default file manifest holds the complete stored file as one OCI blob.
+BigOCI is the optional multipart fallback for files that a repository or
+delivery path cannot carry reliably as a single blob. The descriptor's
+`artifactType` names the layout up front, so a consumer can rule out an
+alternative it cannot read without fetching it.
+
+More examples, including `linux-netboot` and `incus-vm` deliverables, are in
+[`conformance/v1/pass`](conformance/v1/pass).
+
+## What a consumer does
+
+1. Fetch the release by tag or digest and validate the whole index before
+   selecting anything.
+2. List deliverables with any subset of architecture, target, representation,
+   and roles. The result reports every match with its roles, compressions, and
+   file-manifest types, in a defined sort order.
+3. Resolve one deliverable by exact architecture, target, and representation,
+   plus the compressions the consumer can decode. Resolution drops unsupported
+   manifest layouts, then takes the first accepted compression per role. It
+   returns a complete set of roles or fails; there are no partial results and
+   no post-fetch fallback.
+4. Retrieve each selected file manifest by digest, decode the stored file, and
+   verify the decoded content against the declared digest and size.
+
+Selection is defined by exact value comparison. There are no wildcards, and a
+consumer accepts unknown annotation keys and unknown selector values rather
+than rejecting the release.
+
+## What imgoci does not define
+
+- signature, attestation, trust policy, or key formats; another OCI artifact
+  may reference a release-index digest as its subject
+- tag discovery, version ordering, or channels
+- image conversion, installation, or boot behavior
+- internal structure of decoded content beyond each representation's stated
+  form
+- an index that groups several releases, or an adapter that makes an existing
+  catalog reader understand imgoci objects
+
+## Repository contents
+
+| Path | What it is |
 |---|---|
-| [`spec.md`](spec.md) | Sole normative authority for the imgoci format. |
+| [`spec.md`](spec.md) | The format and its required behavior. Sole normative authority. |
 | [`schema/release-index-v1.cue`](schema/release-index-v1.cue) | Canonical machine-readable schema for parsed release-index values. |
 | [`schema/release-index-v1.schema.json`](schema/release-index-v1.schema.json) | Generated, best-effort JSON Schema compatibility layer. |
-| [`conformance/`](conformance/) | Official, informative examples and test cases derived from the specification. |
-| Repository documentation and automation | Informative project process and publication support. |
+| [`conformance/`](conformance/) | Complete release indexes that the CUE schema must accept ([`v1/pass`](conformance/v1/pass)) or reject ([`v1/fail`](conformance/v1/fail)). Informative. |
+| [`RELEASES.md`](RELEASES.md) | Publication mechanics. |
+| [`CHANGELOG.md`](CHANGELOG.md) | Changes to published artifacts. |
+| [`GOVERNANCE.md`](GOVERNANCE.md) | Decision making and the public-value registry policy. |
 
 The CUE schema controls when it and the generated JSON Schema differ. If the
 specification, CUE schema, conformance cases, or implementation behavior
 disagree, `spec.md` controls. A disagreement is a defect to correct in a later
 repository revision; it does not transfer authority to another artifact.
 
-## Repository contents
-
-- [`spec.md`](spec.md) defines the format and required behavior.
-- [`schema/release-index-v1.cue`](schema/release-index-v1.cue) defines the
-  canonical machine-readable constraints for a parsed release index.
-- [`schema/release-index-v1.schema.json`](schema/release-index-v1.schema.json)
-  provides generated compatibility for JSON Schema consumers.
-- [`conformance/v1/pass`](conformance/v1/pass) and
-  [`conformance/v1/fail`](conformance/v1/fail) contain complete release indexes
-  that CUE must accept or reject.
-- [`RELEASES.md`](RELEASES.md) describes publication mechanics.
-- [`CHANGELOG.md`](CHANGELOG.md) records changes to published artifacts.
-
 Passing CUE or JSON Schema validation alone does not establish conformance.
 The schemas model rules that a consumer can apply to a parsed release index.
-They do not establish producer conformance. Producer-only fixed member sets,
-registry, namespace, and lowercase media-type spelling rules remain in
-`spec.md`.
-
-CUE checks more relationships between file entries than JSON Schema. Rules
-that depend on exact encoded bytes, referenced objects, selection, or retrieval
-remain defined by `spec.md` and may be exercised by the conformance corpus.
+Producer-only fixed member sets, registry, namespace, and lowercase media-type
+spelling rules remain in `spec.md`, as do rules that depend on exact encoded
+bytes, referenced objects, selection, or retrieval. CUE checks more
+relationships between file entries than JSON Schema.
 
 ## Validation
 
@@ -67,10 +178,15 @@ material from that implementation.
 
 ## Contributing
 
+The format is a draft, so changes to normative text are still on the table.
+Useful contributions include implementation reports, review of `spec.md`
+against a real publishing or consuming workflow, new conformance fixtures, and
+proposals for public target, representation, role, or compression values.
+
 See [`CONTRIBUTING.md`](CONTRIBUTING.md) for issue and pull-request guidance.
 [`GOVERNANCE.md`](GOVERNANCE.md) defines project decision making and the
-public-value registry policy. Participation is covered by the
-[`Code of Conduct`](CODE_OF_CONDUCT.md). Report security vulnerabilities
+procedure a new public selector value must follow. Participation is covered by
+the [`Code of Conduct`](CODE_OF_CONDUCT.md). Report security vulnerabilities
 according to [`SECURITY.md`](SECURITY.md).
 
 ## License
