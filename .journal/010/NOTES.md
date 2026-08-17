@@ -176,3 +176,19 @@ repo's work.
 
 Merging PR #22 refreshes release PR #3; it stays `release 0.1.0` and gains this
 entry under Documentation.
+
+## 2026-08-17 14:05 — PR #22 merged
+Squash-merged as `9638a9d`; `master` fast-forwarded and the feature worktree and
+branch are gone. The harness files stayed on disk this time because the merge
+only touched `README.md`.
+
+Release Please refreshed PR #3 (branch now `04551a0`): still
+`chore(master): release 0.1.0`, MERGEABLE, `validate` SUCCESS, and its generated
+changelog now carries both `docs(readme): list imgoci/go as the reference
+implementation` (#22) and `docs(release): declare the specification stable for
+v0.1.0` (#21) under Documentation.
+
+Noticed two stale remote branches unrelated to this session: `docs/governance`
+and `feat/canonical-file-manifest`.
+
+Next: PR #3 remains held for the maintainer.
