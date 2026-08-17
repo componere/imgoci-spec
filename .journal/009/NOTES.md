@@ -108,3 +108,27 @@ file-manifest digest may differ in architecture, target, representation, role,
 and filename. Usage is missing from that enumeration and invalidity rule 8 does
 not require agreement on it, so this looks like an omission from PR #17. It is
 normative text and needs its own change.
+
+## 2026-08-16 20:48 — PR #19 merged, PR #20 opened
+PR #19 squash-merged as `6700066`. Local `master` fast-forwarded and the
+`docs-governance-usage-registry` worktree and branches removed.
+PR #20 (`fix/spec-shared-digest-usage`) fixes the normative omission found
+earlier, `validate` passing:
+- section 6 now lists usage among the fields that descriptors sharing a
+  file-manifest digest may differ in;
+- section 5.3's reuse sentence generalized from "more than one architecture or
+  target" to "more than one deliverable, such as two architectures, two
+  targets, or two usage sets";
+- new fixture `conformance/v1/pass/shared-manifest-across-usage-sets.json`:
+  two descriptors share digest `sha256:1111...`, agree on everything invalidity
+  rule 8 requires, and differ in usage set (absent versus `live`) and filename.
+Important finding: no schema change was needed. `release-index-v1.cue` line 105
+already implements rule 8 with agreement required only on media type, descriptor
+size, artifact type, compression, content digest, and content size, so differing
+usage on a shared digest was always valid. The fixture was accepted before any
+spec edit, which confirms this was stale prose, not a behavior change.
+Corpus is now 14 passing and 25 failing.
+Rejected wording along the way: qualifying filename differences with "when they
+do not describe the same file". Rule 8 forces shared-digest descriptors to agree
+on compression, so they can never be transport alternatives of the same file;
+the qualifier would have been vacuous.
