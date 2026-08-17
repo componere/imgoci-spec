@@ -49,3 +49,31 @@ and accepted by `cue vet -c -d '#ReleaseIndex'`; all relative links resolve.
 CHANGELOG was intentionally not edited — Release Please generates the
 `Documentation` section from the `docs:` commit subject.
 Result: PR #18 open, `validate` check passing. Awaiting review/merge decision.
+
+## 2026-08-16 20:20 — Usage selector was missing from the README
+Mistake found by the user: the first README draft was written against `spec.md`
+in the main worktree, which sits on local `master` and was one commit behind
+`origin/master`. PR #17 (`feat(spec): add deliverable usage selector`) had
+already added `usage` as a fourth deliverable-key field, so the draft described
+a three-part key and a four-annotation addressing model.
+Lesson: read source documents from the worktree that is based on the fetched
+default branch, not from the stale main checkout.
+Fixes pushed as a second commit on `docs/readme-orientation`:
+- lede and `The problem` mention what a deliverable can do, using the live vs
+  offline-installer ISO case;
+- addressing prose replaced by a five-row annotation table plus a paragraph on
+  `io.imgoci.usage` being optional, comma-separated in byte order, empty when
+  absent, `install-offline` requiring `install`, and being a producer assertion
+  that imgoci does not execute;
+- consumer steps distinguish list-time usage containment from resolve-time set
+  equality with a possibly empty set;
+- non-goal bullet matches the revised section 1 wording about not implementing
+  installation or boot behavior;
+- fixture pointer mentions usage-set variants.
+Verified again: `moon run root:cue` passes, README example still accepted by
+`cue vet -d '#ReleaseIndex'`, all relative links resolve, PR #18 `validate`
+check passes.
+Open gap for later: `GOVERNANCE.md` `Public-value registry` still lists only
+targets, representations, roles, and compression values, so a proposed `usage`
+value has no acceptance criteria. Left out of PR #18 because governance changes
+are non-trivial under that document's rules.
