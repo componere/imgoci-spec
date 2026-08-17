@@ -132,3 +132,14 @@ Rejected wording along the way: qualifying filename differences with "when they
 do not describe the same file". Rule 8 forces shared-digest descriptors to agree
 on compression, so they can never be transport alternatives of the same file;
 the qualifier would have been vacuous.
+
+## 2026-08-16 20:56 — PR #20 merged
+Squash-merged as `a0e61fd`. Local `master` fast-forwarded, the
+`fix-spec-shared-digest-usage` worktree and its local and remote branches are
+gone, `git ls-files .journal` on `master` prints nothing, and only the
+`master` and `journal/jmgilman` worktrees remain.
+Post-merge workflows: Validate on `master` success, Release Please success.
+Corpus on `master` reports 14 passing and 25 failing release indexes.
+Session work is complete: three PRs merged (#18 README, #19 governance usage
+registry, #20 spec usage enumerations). The only open item is Release Please
+PR #3 proposing `0.1.0-draft.1`, which is mergeable and is a separate decision.
