@@ -87,3 +87,24 @@ Release Please refreshed its PR #3, now proposing `0.1.0-draft.1` with the
 README change under Documentation. That release decision is still open.
 Remaining follow-up from this session: add `usage` to the `GOVERNANCE.md`
 public-value registry categories and define its acceptance criteria.
+
+## 2026-08-16 20:36 — Governance usage registry PR
+Branch `docs/governance-usage-registry` from `origin/master`, worktree
+`.wt/docs-governance-usage-registry`. PR #19, `validate` passing.
+Change: `GOVERNANCE.md` public-value registry now governs usage values. Added a
+usage `Definition` criterion (capability asserted about a complete deliverable,
+specific enough for a producer to decide applicability since imgoci never
+proves the behavior, and it must state required or excluded relationships such
+as `install-offline` requiring `install`) plus a paragraph requiring a usage
+proposal to state how existing publishers adopt the value, because producers
+must declare every applicable standard usage value and the usage set is part of
+the deliverable key. Deliberately posed that as a per-proposal question instead
+of writing a republication rule into policy.
+Also updated `.github/ISSUE_TEMPLATE/value-proposal.yml` (usage in the dropdown,
+extended definition guidance, new `Adoption by existing publishers` field) and
+the usage mention in `CONTRIBUTING.md` and `README.md`.
+Found but not fixed: `spec.md` section 6 says descriptors sharing a
+file-manifest digest may differ in architecture, target, representation, role,
+and filename. Usage is missing from that enumeration and invalidity rule 8 does
+not require agreement on it, so this looks like an omission from PR #17. It is
+normative text and needs its own change.
