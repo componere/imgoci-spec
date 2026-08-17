@@ -8,7 +8,8 @@ compressed. A consumer reads the index, picks the files it wants, fetches only
 those, and checks the decoded bytes against the digest and size the producer
 declared.
 
-[`spec.md`](spec.md) is the normative document. The format is stable.
+[`spec.md`](spec.md) is the normative document. The format is stable. For
+working code, see [Implementations](#implementations).
 
 ## The problem
 
@@ -190,12 +191,20 @@ Moon checks CUE formatting and module state, validates every passing and failing
 fixture, and verifies that the generated JSON Schema is current. CI installs the
 same locked tools and runs the same Moon task.
 
-## Implementation
+## Implementations
 
-The canonical Go implementation is public at
-[`github.com/imgoci/go`](https://github.com/imgoci/go).
-The specification repository does not depend on, execute, or generate normative
-material from that implementation.
+- [`imgoci/go`](https://github.com/imgoci/go) — Go library and command-line tool
+  for publishing and consuming imgoci releases. Maintained by this project as
+  its reference implementation.
+
+A reference implementation is not normative. If an implementation and `spec.md`
+disagree, `spec.md` controls and the difference is an implementation defect. The
+specification repository does not depend on, execute, or generate normative
+material from any implementation.
+
+To add an implementation to this list, open a pull request. Implementation
+reports and conformance fixtures drawn from real publishing or consuming
+workflows are welcome.
 
 ## Contributing
 
