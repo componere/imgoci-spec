@@ -25,9 +25,11 @@ release-wide rules from Sections 5, 6, and 9:
 
 - each architecture token has no more than 128 ASCII bytes;
 - decoded content size does not exceed `9223372036854775807`;
-- standard representations contain their required roles;
+- usage sets use canonical token order and `install-offline` requires
+  `install`;
+- standard representations contain their required roles in each exact usage
+  set;
 - `incus-vm` deliverables use the `incus` target;
-- a transport alternative tuple occurs only once;
 - transport alternatives for one file have the same content digest, content
   size, and filename;
 - different roles in one deliverable have different filenames;
@@ -80,11 +82,12 @@ from the repository root with
 `mise exec -- moon run root:cue --summary minimal`.
 
 JSON Schema is a best-effort compatibility layer. It does not carry the exact
-architecture-component and string-encoded content-size bounds, constraints on
-unknown annotation values, or release-wide CUE constraints. It also cannot
-check the external conformance requirements listed above. Neither schema
-enforces producer-only registry, namespace, or lowercase spelling rules. When
-CUE and JSON Schema validation differ, CUE controls.
+architecture-component and string-encoded content-size bounds, usage token
+ordering and relationships, constraints on unknown annotation values, or
+release-wide CUE constraints. It also cannot check the external conformance
+requirements listed above. Neither schema enforces producer-only registry,
+namespace, or lowercase spelling rules. When CUE and JSON Schema validation
+differ, CUE controls.
 
 Neither schema uses the imgoci public-value registry as an allowlist. Consumer
 validation accepts unknown syntactically valid selector values, file-manifest
