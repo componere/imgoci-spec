@@ -58,6 +58,10 @@
                 "io.imgoci.target": {
                     "description": "io.imgoci.target is the target selector.",
                     "$ref": "#/$defs/BasicTokenConstraint"
+                },
+                "io.imgoci.usage": {
+                    "description": "io.imgoci.usage optionally serializes a deliverable usage set. This\nprojection checks non-empty comma-separated token syntax and the 4096-byte\nlimit; it does not check canonical order, uniqueness, or the\ninstall-offline dependency on install.",
+                    "$ref": "#/$defs/UsageConstraint"
                 }
             },
             "required": [
@@ -213,6 +217,13 @@
             "type": "string",
             "description": "#SHA256DigestConstraint is sha256: followed by 64 lowercase hexadecimal\ndigits.",
             "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        "UsageConstraint": {
+            "type": "string",
+            "description": "#UsageConstraint is one or more comma-separated basic tokens and no more\nthan 4096 ASCII bytes.",
+            "maxLength": 4096,
+            "minLength": 1,
+            "pattern": "^[a-z0-9]+([._-][a-z0-9]+)*(,[a-z0-9]+([._-][a-z0-9]+)*)*$"
         }
     },
     "description": "#ReleaseIndexJSONSchema is the best-effort JSON Schema compatibility\nprojection. It preserves the required object shapes and local field constraints\nthat CUE can translate without weakening #ReleaseIndex.",

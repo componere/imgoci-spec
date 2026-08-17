@@ -1,6 +1,6 @@
 # imgoci release format v1
 
-Status: draft, 2026-08-11
+Status: draft, 2026-08-16
 
 License: Community Specification License 1.0
 ([`LICENSE-COMMUNITY-SPEC`](LICENSE-COMMUNITY-SPEC)).
@@ -17,7 +17,7 @@ files are stored in one OCI repository.
 
 The format lets a consumer:
 
-- find a deliverable by architecture, target, and representation;
+- find a deliverable by architecture, target, representation, and usage;
 - find each file in that deliverable by role;
 - choose among stored encodings of the same file;
 - verify the size and SHA-256 digest of the decoded content; and
@@ -28,7 +28,7 @@ This specification does not define:
 
 - integration with an existing image reader or engine;
 - a compatibility adapter for another catalog or schema;
-- image conversion, installation, or boot behavior;
+- image conversion or the implementation of installation or boot behavior;
 - decoded-content structure beyond the representation requirements in section
   5.4;
 - a signature format, attestation format, trust policy, or key format;
@@ -47,13 +47,14 @@ Examples do not define new selector values.
 |---|---|---|
 | Release | One named and versioned set of deliverables. | `ExampleOS` version `42.1`. |
 | Release index | The OCI image index that describes a release. | The index at `registry.example.com/os/example:42.1`. |
-| Deliverable | All file entries with the same architecture, target, and representation. | `amd64`, `qemu`, and `qcow2`. |
+| Deliverable | All file entries with the same architecture, target, representation, and usage set. | `amd64`, `metal`, `iso`, and `install,install-offline`. |
 | File entry | One descriptor in the release index. | A descriptor for the `disk` role using `zstd` compression. |
 | File | All transport alternatives with the same deliverable key and role. | The `disk` role across its `none` and `zstd` alternatives. |
 | Transport alternative | One stored encoding of a file. A consumer first filters by supported file-manifest type, then selects by compression. | The `zstd` encoding of a `disk` file. |
 | Architecture | The CPU instruction set required by a deliverable. | `amd64` or `arm64`. |
 | Target | The boot or import environment for which a deliverable was built. | `qemu` or `metal`. |
 | Representation | The form a consumer requests, such as a disk format or a coordinated network-boot set. | `qcow2` or `linux-netboot`. |
+| Usage | The producer-asserted ways in which a deliverable can be used. | `live` or `install,install-offline`. |
 | Role | The purpose of one file in a deliverable. | `disk`, `kernel`, or `initramfs`. |
 | File manifest | An OCI image manifest that describes one stored file. | A standard imgoci file manifest or a BigOCI file manifest. |
 | Stored file | The bytes referenced by a standard file manifest or assembled from a BigOCI file manifest. These bytes may be compressed. | A zstd stream stored as one OCI blob. |
@@ -63,13 +64,13 @@ Examples do not define new selector values.
 The deliverable key is:
 
 ~~~text
-(architecture, target, representation)
+(architecture, target, representation, usage)
 ~~~
 
 The file key is:
 
 ~~~text
-(architecture, target, representation, role)
+(architecture, target, representation, usage, role)
 ~~~
 
 ## 3. Object model
@@ -290,6 +291,9 @@ Every file-entry descriptor must contain these annotations:
 | `io.imgoci.content.size` | Byte length of the decoded content. |
 | `io.imgoci.filename` | Producer-chosen filename for the decoded content. |
 
+`io.imgoci.usage` is an optional deliverable usage selector. Its absence
+represents the empty usage set.
+
 A missing or invalid required annotation makes the whole release index
 invalid.
 
@@ -321,8 +325,15 @@ A basic token contains 1 to 128 ASCII bytes and must match:
 ^[a-z0-9]+([._-][a-z0-9]+)*$
 ~~~
 
-`target`, `representation`, `role`, and `compression` values must be
-basic tokens.
+`target`, `representation`, `role`, and `compression` values must be basic
+tokens.
+
+A present `io.imgoci.usage` value contains one or more unique basic tokens. If
+it contains more than one token, exactly one ASCII comma with no whitespace
+must separate each adjacent pair. The tokens must appear in strictly ascending
+UTF-8 byte order, and the complete value must contain no more than 4096 ASCII
+bytes. The annotation must be omitted for the empty usage set. A present empty
+string is invalid.
 
 An architecture value must contain either one basic token or two basic tokens
 separated by `/`. For a public first token, a producer must use the OCI Image
@@ -345,14 +356,14 @@ value. A consumer must preserve every other syntactically valid value during
 discovery. During resolution, it treats a value as unsupported unless it
 supports that file-manifest format.
 
-Public target, representation, role, and compression values are append-only.
-Their meanings must not change. These imgoci-owned values are defined only in
-this specification or a later imgoci addendum. Public architecture spellings
-come from OCI as described above. When a public selector value matches the
-producer's intended meaning, the producer must use it. The producer must not
-define a private synonym for that value. Other producer-defined selector values
-must use `x-<owner>-<name>`. This naming rule does not apply to
-`io.imgoci.name` or the release version.
+Public target, representation, usage, role, and compression values are
+append-only. Their meanings must not change. These imgoci-owned values are
+defined only in this specification or a later imgoci addendum. Public
+architecture spellings come from OCI as described above. When a public
+selector value matches the producer's intended meaning, the producer must use
+it. The producer must not define a private synonym for that value. Other
+producer-defined selector values must use `x-<owner>-<name>`. This naming rule
+does not apply to `io.imgoci.name` or the release version.
 
 The imgoci-owned public-value registry applies to producer conformance, not to
 consumer validation of selector values. A consumer must accept every
@@ -378,15 +389,15 @@ A filename is one path component. It must not be `.` or `..`. This syntax does
 not guarantee that the value is valid on every filesystem. A consumer must
 apply destination-specific rules before using it as a local filename and may
 map it to another local name. A consumer must not parse a filename to discover
-architecture, target, representation, role, or compression.
+architecture, target, representation, usage, role, or compression.
 
 ### 5.4 Standard selector values
 
 The tables in this section define the initial public values owned by imgoci for
-targets, representations, compression, and roles. Public architecture spellings
-come from OCI as described in section 5.3. A later compatible revision or
-addendum may add an imgoci-owned public value without changing the release-index
-shape. A new public value must satisfy section 5.3.
+targets, representations, usage, compression, and roles. Public architecture
+spellings come from OCI as described in section 5.3. A later compatible
+revision or addendum may add an imgoci-owned public value without changing the
+release-index shape. A new public value must satisfy section 5.3.
 
 #### Targets
 
@@ -451,8 +462,9 @@ The kernel may contain an embedded initramfs. An initramfs, whether embedded
 or separate, may provide the complete root filesystem.
 
 A producer must assign architecture, target, representation, and role values
-that describe the decoded content and deliverable. When it uses a standard
-representation, the decoded content must have the form listed in the table.
+that describe the decoded content and deliverable. It must declare usage values
+as specified under Usage. When it uses a standard representation, the decoded
+content must have the form listed in the table.
 During imgoci validation and retrieval, a consumer verifies transport
 structure, decoding, size, and digest as specified in section 8. It is not
 required to parse decoded content to confirm the declared selectors, role, or
@@ -476,6 +488,30 @@ representation, not the compression. If the stored file has no outer transform
 beyond the representation, the entry uses `compression=none`. The entry may use
 private representation and role values until an imgoci addendum defines public
 values for that form.
+
+#### Usage
+
+Usage values are capabilities and may be combined.
+
+| Value | Meaning |
+|---|---|
+| `live` | The deliverable can boot and run an OS session without first installing the release on persistent storage. |
+| `install` | The deliverable can install the release on persistent storage separate from the source used to run the installer. |
+| `install-offline` | The deliverable can complete the producer-defined baseline installation while network connectivity is unavailable. |
+
+A producer must declare every standard usage value that applies to a
+deliverable. `install-offline` requires `install`; both values must appear in
+the serialized usage set. A consumer must reject a usage set that contains
+`install-offline` without `install`.
+
+The baseline includes every update, registration, or activation that the
+producer requires to complete installation. It excludes optional instances of
+those operations. Usage values apply independently of representation. A
+preinstalled disk image is not `live` solely because it can boot without an
+installation step.
+
+Usage values are producer assertions. imgoci validation and retrieval do not
+execute the deliverable or prove that it has the asserted behavior.
 
 #### Compression
 
@@ -519,6 +555,10 @@ Representation identifies the form requested by a consumer. It may describe
 one file, such as `qcow2`, or a coordinated file set, such as
 `linux-netboot`.
 
+Usage identifies the producer-asserted ways in which a deliverable can be used.
+The complete usage set distinguishes deliverables that otherwise have the same
+architecture, target, and representation.
+
 Role identifies one file inside a deliverable. Two files in one deliverable
 must use different roles.
 
@@ -544,9 +584,10 @@ The release index is invalid for a consumer if any of these conditions is true:
 2. A descriptor violates a consumer-validation requirement in section 5.2.
 3. A required value does not satisfy the syntax in section 5.3.
 4. A deliverable using a standard representation is missing a required role or
-   uses a target forbidden by that representation in section 5.4.
+   uses a target forbidden by that representation in section 5.4, or a usage
+   set violates a standard usage-value relationship in section 5.4.
 5. Two entries have the same
-   `(architecture, target, representation, role, compression)` tuple.
+   `(architecture, target, representation, usage, role, compression)` tuple.
 6. Transport alternatives for one file have different content digests,
    content sizes, or filenames.
 7. Two different roles in one deliverable have the same filename.
@@ -585,11 +626,13 @@ section 4.
 The caller supplies an OCI reference.
 
 Before fetching the release, a consumer must validate the query. Every query
-value must satisfy section 5.3. If present, a role list must be non-empty and
-must not contain duplicates. For a resolve query, the accepted-compression
-list must be non-empty and contain no duplicates. Every value in that list must
-name a compression that the consumer can decode. List order runs from most
-preferred to least preferred.
+value must satisfy section 5.3. A usage list or role list must not contain
+duplicates. A usage list in a list query, when present, must be non-empty. A
+resolve query must contain a usage list, which may be empty. A role list, when
+present, must be non-empty. For a resolve query, the accepted-compression list
+must be non-empty and contain no duplicates. Every value in that list must name
+a compression that the consumer can decode. List order runs from most preferred
+to least preferred.
 
 A consumer must fetch the release index with an OCI Distribution manifest
 `GET` request. The request must contain:
@@ -642,19 +685,22 @@ A list query may contain:
 
 - architecture;
 - target;
-- representation; and
+- representation;
+- one or more usage values that each result must contain; and
 - one or more roles.
 
-Every supplied value is an exact, case-sensitive filter. An omitted scalar
-field matches every value.
+Every supplied scalar value is an exact, case-sensitive filter. An omitted
+scalar field matches every value. An omitted usage list matches every usage
+set. A deliverable matches a usage filter only if its usage set contains every
+requested value.
 
 A deliverable matches a role filter only if it contains every requested role.
 
-The result must include every matching deliverable, its roles, and the
-available transport alternatives for each role. Each alternative includes its
-compression and file-manifest type. Deliverables must be sorted by their keys.
-Roles within a deliverable must be sorted by role. Alternatives within a role
-must be sorted by compression. Each comparison uses ascending UTF-8 byte order.
+The result must include every matching deliverable, its exact usage set, its
+roles, and the available transport alternatives for each role. Deliverables
+must be sorted by their keys. Roles within a deliverable must be sorted by
+role. Alternatives within a role must be sorted by compression. Each
+comparison uses ascending UTF-8 byte order.
 
 Listing must not remove alternatives because the consumer does not support
 their file-manifest type. It exposes those types so the caller can filter or
@@ -667,13 +713,15 @@ deliverable with that representation.
 
 ### 7.3 Resolve one deliverable
 
-A resolve query must contain an exact architecture, target, and
-representation. It may contain a role list. It must contain the
-accepted-compression list defined in section 7.1.
+A resolve query must contain an exact architecture, target, representation,
+and complete usage set. The usage set may be empty. The query may contain a
+role list. It must contain the accepted-compression list defined in section
+7.1.
 
 A consumer must:
 
-1. find the deliverable with the exact requested key;
+1. find the deliverable with the exact requested key, including exact usage-set
+   equality;
 2. fail without a result if it does not exist;
 3. when the role list is present, select exactly the requested roles;
 4. when the role list is omitted for `linux-netboot`, select every role;
@@ -709,10 +757,10 @@ post-retrieval fallback.
 The producer does not mark one compression as preferred. Every transport
 alternative for a file has the same content digest, size, and filename.
 
-An operation that needs to interpret a representation or role may report the
-representation or role value as unsupported. A consumer may still list,
-mirror, or verify stored-file and decoded-content integrity when it does not
-understand the selector values.
+An operation that needs to interpret a representation, usage value, or role may
+report the value as unsupported. A consumer may still list, mirror, or verify
+stored-file and decoded-content integrity when it does not understand the
+selector values.
 
 ## 8. Retrieval and verification
 
@@ -794,10 +842,12 @@ through 8 in section 6.
 The producer must sort `manifests` by this tuple:
 
 ~~~text
-(architecture, target, representation, role, compression)
+(architecture, target, representation, usage, role, compression)
 ~~~
 
-Each tuple field is compared by ascending UTF-8 byte order.
+Each tuple field is compared by ascending UTF-8 byte order. For `usage`, the
+producer compares the canonical serialized value and uses the empty string when
+the annotation is absent.
 
 The producer must then encode the full release index with the JSON
 Canonicalization Scheme in RFC 8785. The producer sends the compact canonical
@@ -884,6 +934,8 @@ index and of the standard file manifest.
 }
 ~~~
 
+The file entry omits `io.imgoci.usage`, so it belongs to the empty usage set.
+
 The file entry above points to a standard file manifest such as:
 
 ~~~json
@@ -913,11 +965,11 @@ point to a BigOCI manifest with at least two parts.
 A Linux network-boot deliverable may use three entries with one deliverable key
 and three roles:
 
-| Architecture | Target | Representation | Role |
-|---|---|---|---|
-| `amd64` | `metal` | `linux-netboot` | `kernel` |
-| `amd64` | `metal` | `linux-netboot` | `initramfs` |
-| `amd64` | `metal` | `linux-netboot` | `rootfs` |
+| Architecture | Target | Representation | Usage | Role |
+|---|---|---|---|---|
+| `amd64` | `metal` | `linux-netboot` | empty set | `kernel` |
+| `amd64` | `metal` | `linux-netboot` | empty set | `initramfs` |
+| `amd64` | `metal` | `linux-netboot` | empty set | `rootfs` |
 
 Each row is a separate file entry. The `kernel` role is required. The
 `initramfs` and `rootfs` roles are optional. Each role may have one or more

@@ -15,6 +15,9 @@ This section records work completed before automated releases were enabled.
 
 ### Changed
 
+- Added canonical serialization for deliverable usage sets with `live`,
+  `install`, and `install-offline` values, exact resolution, and subset
+  discovery.
 - Separated producer rules from consumer validation so unknown annotations and
   extension file-manifest types remain acceptable to consumers.
 - Required lowercase producer spellings for defined media types and

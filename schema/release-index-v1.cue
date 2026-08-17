@@ -40,28 +40,30 @@ import (
 		let architecture = entry.annotations["io.imgoci.architecture"]
 		let target = entry.annotations["io.imgoci.target"]
 		let representation = entry.annotations["io.imgoci.representation"]
+		let usage = strings.Join([for annotationName, annotationValue in entry.annotations if annotationName == "io.imgoci.usage" {annotationValue}], "")
+		let usageLabel = [if usage == "" {"<empty>"}, if usage != "" {usage}][0]
 
 		if representation == "raw" || representation == "raw-4kn" || representation == "qcow2" || representation == "iso" {
-			if len([for candidate in manifests if candidate.annotations["io.imgoci.architecture"] == architecture && candidate.annotations["io.imgoci.target"] == target && candidate.annotations["io.imgoci.representation"] == representation && candidate.annotations["io.imgoci.role"] == "disk" {candidate}]) == 0 {
-				manifests: error("deliverable \(architecture), \(target), \(representation) must contain the disk role")
+			if len([for candidate in manifests if candidate.annotations["io.imgoci.architecture"] == architecture && candidate.annotations["io.imgoci.target"] == target && candidate.annotations["io.imgoci.representation"] == representation && strings.Join([for annotationName, annotationValue in candidate.annotations if annotationName == "io.imgoci.usage" {annotationValue}], "") == usage && candidate.annotations["io.imgoci.role"] == "disk" {candidate}]) == 0 {
+				manifests: error("deliverable architecture=\(architecture), target=\(target), representation=\(representation), usage=\(usageLabel) must contain the disk role")
 			}
 		}
 
 		// incus-vm is the only standard representation with a required target.
 		if representation == "incus-vm" {
 			if target != "incus" {
-				manifests: error("incus-vm deliverable \(architecture), \(target) must use target incus")
+				manifests: error("incus-vm deliverable architecture=\(architecture), target=\(target), usage=\(usageLabel) must use target incus")
 			}
 			for requiredRole in ["disk", "metadata"] {
-				if len([for candidate in manifests if candidate.annotations["io.imgoci.architecture"] == architecture && candidate.annotations["io.imgoci.target"] == target && candidate.annotations["io.imgoci.representation"] == representation && candidate.annotations["io.imgoci.role"] == requiredRole {candidate}]) == 0 {
-					manifests: error("deliverable \(architecture), \(target), incus-vm must contain the \(requiredRole) role")
+				if len([for candidate in manifests if candidate.annotations["io.imgoci.architecture"] == architecture && candidate.annotations["io.imgoci.target"] == target && candidate.annotations["io.imgoci.representation"] == representation && strings.Join([for annotationName, annotationValue in candidate.annotations if annotationName == "io.imgoci.usage" {annotationValue}], "") == usage && candidate.annotations["io.imgoci.role"] == requiredRole {candidate}]) == 0 {
+					manifests: error("deliverable architecture=\(architecture), target=\(target), representation=incus-vm, usage=\(usageLabel) must contain the \(requiredRole) role")
 				}
 			}
 		}
 
 		if representation == "linux-netboot" {
-			if len([for candidate in manifests if candidate.annotations["io.imgoci.architecture"] == architecture && candidate.annotations["io.imgoci.target"] == target && candidate.annotations["io.imgoci.representation"] == representation && candidate.annotations["io.imgoci.role"] == "kernel" {candidate}]) == 0 {
-				manifests: error("deliverable \(architecture), \(target), linux-netboot must contain the kernel role")
+			if len([for candidate in manifests if candidate.annotations["io.imgoci.architecture"] == architecture && candidate.annotations["io.imgoci.target"] == target && candidate.annotations["io.imgoci.representation"] == representation && strings.Join([for annotationName, annotationValue in candidate.annotations if annotationName == "io.imgoci.usage" {annotationValue}], "") == usage && candidate.annotations["io.imgoci.role"] == "kernel" {candidate}]) == 0 {
+				manifests: error("deliverable architecture=\(architecture), target=\(target), representation=linux-netboot, usage=\(usageLabel) must contain the kernel role")
 			}
 		}
 	}
@@ -74,37 +76,40 @@ import (
 				let leftArchitecture = left.annotations["io.imgoci.architecture"]
 				let leftTarget = left.annotations["io.imgoci.target"]
 				let leftRepresentation = left.annotations["io.imgoci.representation"]
+				let leftUsage = strings.Join([for annotationName, annotationValue in left.annotations if annotationName == "io.imgoci.usage" {annotationValue}], "")
 				let leftRole = left.annotations["io.imgoci.role"]
 				let leftCompression = left.annotations["io.imgoci.compression"]
 				let rightArchitecture = right.annotations["io.imgoci.architecture"]
 				let rightTarget = right.annotations["io.imgoci.target"]
 				let rightRepresentation = right.annotations["io.imgoci.representation"]
+				let rightUsage = strings.Join([for annotationName, annotationValue in right.annotations if annotationName == "io.imgoci.usage" {annotationValue}], "")
+				let rightUsageLabel = [if rightUsage == "" {"<empty>"}, if rightUsage != "" {rightUsage}][0]
 				let rightRole = right.annotations["io.imgoci.role"]
 				let rightCompression = right.annotations["io.imgoci.compression"]
-				let sameDeliverable = leftArchitecture == rightArchitecture && leftTarget == rightTarget && leftRepresentation == rightRepresentation
+				let sameDeliverable = leftArchitecture == rightArchitecture && leftTarget == rightTarget && leftRepresentation == rightRepresentation && leftUsage == rightUsage
 				let sameFile = sameDeliverable && leftRole == rightRole
 				let sameTransportAlternative = sameFile && leftCompression == rightCompression
 
 				if sameTransportAlternative {
-					manifests: error("transport alternative \(rightArchitecture), \(rightTarget), \(rightRepresentation), \(rightRole), \(rightCompression) is duplicated")
+					manifests: error("transport alternative architecture=\(rightArchitecture), target=\(rightTarget), representation=\(rightRepresentation), usage=\(rightUsageLabel), role=\(rightRole), compression=\(rightCompression) is duplicated")
 				}
 
 				if sameFile && (left.annotations["io.imgoci.content.digest"] != right.annotations["io.imgoci.content.digest"] || left.annotations["io.imgoci.content.size"] != right.annotations["io.imgoci.content.size"] || left.annotations["io.imgoci.filename"] != right.annotations["io.imgoci.filename"]) {
-					manifests: error("transport alternatives for file \(rightArchitecture), \(rightTarget), \(rightRepresentation), \(rightRole) must have the same content digest, content size, and filename")
+					manifests: error("transport alternatives for file architecture=\(rightArchitecture), target=\(rightTarget), representation=\(rightRepresentation), usage=\(rightUsageLabel), role=\(rightRole) must have the same content digest, content size, and filename")
 				}
 
 				if sameDeliverable && leftRole != rightRole && left.annotations["io.imgoci.filename"] == right.annotations["io.imgoci.filename"] {
-					manifests: error("different roles in deliverable \(rightArchitecture), \(rightTarget), \(rightRepresentation) must have different filenames")
+					manifests: error("different roles in deliverable architecture=\(rightArchitecture), target=\(rightTarget), representation=\(rightRepresentation), usage=\(rightUsageLabel) must have different filenames")
 				}
 
 				if left.digest == right.digest && (strings.ToLower(left.mediaType) != strings.ToLower(right.mediaType) || left.size != right.size || strings.ToLower(left.artifactType) != strings.ToLower(right.artifactType) || leftCompression != rightCompression || left.annotations["io.imgoci.content.digest"] != right.annotations["io.imgoci.content.digest"] || left.annotations["io.imgoci.content.size"] != right.annotations["io.imgoci.content.size"]) {
 					manifests: error("descriptors for file manifest \(right.digest) must agree on media type, descriptor size, artifact type, compression, content digest, and content size")
 				}
 
-				let leftOrderKey = "\(leftArchitecture)\u0000\(leftTarget)\u0000\(leftRepresentation)\u0000\(leftRole)\u0000\(leftCompression)"
-				let rightOrderKey = "\(rightArchitecture)\u0000\(rightTarget)\u0000\(rightRepresentation)\u0000\(rightRole)\u0000\(rightCompression)"
+				let leftOrderKey = "\(leftArchitecture)\u0000\(leftTarget)\u0000\(leftRepresentation)\u0000\(leftUsage)\u0000\(leftRole)\u0000\(leftCompression)"
+				let rightOrderKey = "\(rightArchitecture)\u0000\(rightTarget)\u0000\(rightRepresentation)\u0000\(rightUsage)\u0000\(rightRole)\u0000\(rightCompression)"
 				if leftOrderKey > rightOrderKey {
-					manifests: error("manifests must be ordered by architecture, target, representation, role, and compression in ascending UTF-8 byte order")
+					manifests: error("manifests must be ordered by architecture, target, representation, usage, role, and compression in ascending UTF-8 byte order")
 				}
 			}
 		}
@@ -173,6 +178,28 @@ import (
 			_contentSizeValueError: error("io.imgoci.content.size must not exceed 9223372036854775807")
 		}
 	}
+
+	for annotationName, usage in annotations {
+		if annotationName == "io.imgoci.usage" {
+			let usageValues = strings.Split(usage, ",")
+			for leftIndex, leftUsage in usageValues {
+				for rightIndex, rightUsage in usageValues {
+					if leftIndex < rightIndex && leftUsage >= rightUsage {
+						annotations: {
+							// _usageOrderError reports duplicate tokens or noncanonical token order.
+							_usageOrderError: error("io.imgoci.usage values must be unique and in ascending UTF-8 byte order")
+						}
+					}
+				}
+			}
+			if list.Contains(usageValues, "install-offline") && !list.Contains(usageValues, "install") {
+				annotations: {
+					// _usageRelationshipError reports install-offline without install.
+					_usageRelationshipError: error("io.imgoci.usage value install-offline requires install")
+				}
+			}
+		}
+	}
 }
 
 // #FileEntryDescriptorShape defines the file-entry descriptor and local
@@ -239,6 +266,9 @@ import (
 	// io.imgoci.representation is the deliverable representation selector.
 	"io.imgoci.representation"!: #BasicToken
 
+	// io.imgoci.usage is the optional canonical serialization of the deliverable usage set.
+	"io.imgoci.usage"?: #Usage
+
 	// io.imgoci.role is the file role.
 	"io.imgoci.role"!: #BasicToken
 
@@ -256,7 +286,7 @@ import (
 	"io.imgoci.filename"!: #Filename
 
 	// Consumer validation accepts every other annotation as an opaque string.
-	[(string & !~"^io\\.imgoci\\.(architecture|target|representation|role|compression|content\\.digest|content\\.size|filename)$")]: string
+	[(string & !~"^io\\.imgoci\\.(architecture|target|representation|usage|role|compression|content\\.digest|content\\.size|filename)$")]: string
 }
 
 // #FileEntryAnnotationsShape defines file-entry annotation constraints used by
@@ -271,6 +301,12 @@ import (
 
 	// io.imgoci.representation is the deliverable representation selector.
 	"io.imgoci.representation"!: #BasicTokenConstraint
+
+	// io.imgoci.usage optionally serializes a deliverable usage set. This
+	// projection checks non-empty comma-separated token syntax and the 4096-byte
+	// limit; it does not check canonical order, uniqueness, or the
+	// install-offline dependency on install.
+	"io.imgoci.usage"?: #UsageConstraint
 
 	// io.imgoci.role is the file role.
 	"io.imgoci.role"!: #BasicTokenConstraint
@@ -289,7 +325,7 @@ import (
 	"io.imgoci.filename"!: #FilenameConstraint
 
 	// Consumer validation accepts every other annotation as an opaque string.
-	[(string & !~"^io\\.imgoci\\.(architecture|target|representation|role|compression|content\\.digest|content\\.size|filename)$")]: string
+	[(string & !~"^io\\.imgoci\\.(architecture|target|representation|usage|role|compression|content\\.digest|content\\.size|filename)$")]: string
 }
 
 // #BasicToken is a basic token with a custom error for invalid values.
@@ -300,6 +336,17 @@ import (
 // ^[a-z0-9]+([._-][a-z0-9]+)*$.
 #BasicTokenConstraint: string & strings.MinRunes(1) & strings.MaxRunes(128) &
 	=~"^[a-z0-9]+([._-][a-z0-9]+)*$"
+
+// #Usage is a non-empty serialized usage set with a custom error for invalid
+// local syntax. #ReleaseIndex requires unique tokens in ascending UTF-8 byte
+// order and requires install whenever install-offline is present.
+#Usage: #UsageConstraint |
+	error("usage must contain one or more comma-separated basic tokens and no more than 4096 ASCII bytes")
+
+// #UsageConstraint is one or more comma-separated basic tokens and no more
+// than 4096 ASCII bytes.
+#UsageConstraint: string & strings.MinRunes(1) & strings.MaxRunes(4096) &
+	=~"^[a-z0-9]+([._-][a-z0-9]+)*(,[a-z0-9]+([._-][a-z0-9]+)*)*$"
 
 // #Architecture is an architecture selector with a custom error for invalid
 // values. It contains one basic token or two basic tokens separated by a slash.
